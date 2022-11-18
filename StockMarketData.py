@@ -388,7 +388,6 @@ class StockMarketDatapipeline:
 
         return text_len, word_count
 
-    def pas():
-        return None
+
 if __name__ == "__main__":
-    StockMarketDatapipeline('My son').plot_tweet_sentiment_donut_chart()
+    StockMarketDatapipeline("My son").plot_tweet_sentiment_donut_chart()
