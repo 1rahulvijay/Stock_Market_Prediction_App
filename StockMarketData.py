@@ -388,6 +388,25 @@ class StockMarketDatapipeline:
 
         return text_len, word_count
 
+    def get_current_stock_open_price(self) -> BeautifulSoup:
+        """sending get request and retrieving html table using requests and beautiful soup,
+        finding price class using beautiful soup and passing html address for open price
+        """
+        self.logger.info(f"Getting Current Open Price for {self.stock_ticker}")
+        try:
+            url = f"{self.settings['yfinance_url']}/{self.stock_ticker}"
+            page = requests.get(url)
+            soup = BeautifulSoup(page.text, "lxml")
+            price = soup.find(
+                self.settings["open_address"], class_=self.settings["open_class"]
+            ).text
+            self.logger.info(
+                f"Retrived Open Price Successfully {self.stock_ticker}: {price}"
+            )
+            return price
+        except Exception as e:
+            self.logger.error(f"Cannot Get Open Price for: {e}")
+
 
 if __name__ == "__main__":
-    StockMarketDatapipeline("My son").plot_tweet_sentiment_donut_chart()
+    StockMarketDatapipeline("META").get_current_stock_open_price()
