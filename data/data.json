@@ -4,5 +4,7 @@
     "html_address": "fin-streamer",
     "html_class": "Fw(b) Fz(36px) Mb(-4px) D(ib)",
     "word_cloud_temp": "data\\template.png",
-    "generated_word_cloud": "data\\generated_wordcloud.png"
+    "generated_word_cloud": "data\\generated_wordcloud.png",
+    "open_class": "Ta(end) Fw(600) Lh(14px)",
+    "open_address": "td"
 }
