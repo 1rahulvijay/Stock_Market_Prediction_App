@@ -253,4 +253,4 @@ class TimeSeriesDecompose:
         plt.show()
 
 
-TimeSeriesDecompose(stock_ticker='BTC-USD').plot_multiplicative_decompose()
+TimeSeriesDecompose(stock_ticker='BTC-USD')
