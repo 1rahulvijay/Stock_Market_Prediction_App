@@ -9,15 +9,14 @@ import pandas as pd
 from sklearn.metrics import r2_score
 from matplotlib.pyplot import style
 from sklearn.metrics import mean_absolute_error
-from StockMarketDataPlots import TimeSeriesDecompose
+from StockDataAnalyzer import StockDatapipeline
 style.use('ggplot')
 
 
 class LongShortTermMemory:
     def __init__(self, stock_ticker):
         self.stock_ticker = stock_ticker
-        self.data = TimeSeriesDecompose.get_stock_data_from_ticker(
-            stock_ticker=self.stock_ticker)
+        self.data = StockDatapipeline.get_stock_data_from_ticker(stock_ticker)
         self.aim = "Close"
         self.window_len = 5
         self.test_size = 0.2
@@ -166,5 +165,4 @@ class LongShortTermMemory:
 
 
 if __name__ == "__main__":
-    LongShortTermMemory(
-        stock_ticker='RNDR-USD').plot_prediction()
+    LongShortTermMemory(stock_ticker='RNDR-USD').plot_prediction()

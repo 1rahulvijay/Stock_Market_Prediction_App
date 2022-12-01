@@ -383,4 +383,4 @@ class StockNews(StockTweets):
 
 if __name__ == "__main__":
     StockNews(stock_ticker='GOOGL').plot_sentiments_with_price()
-    # StockNews(stock_ticker='GOOGL').plot_word_cloud()
+    #StockTweets(stock_ticker='GOOGL').plot_word_cloud()

@@ -1,12 +1,22 @@
+import csv
+import json
+import logging
 import os
-import yfinance as yf
-import numpy as np
+import sys
+import string
+from datetime import datetime
+import matplotlib.pyplot as plt
 import pandas as pd
+import requests
+import matplotlib.image as mpimg
+import yfinance as yf
+from bs4 import BeautifulSoup
+from dotenv import find_dotenv, load_dotenv
+import numpy as np
 import seaborn
 from scipy import signal
 from dateutil.parser import parse
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acf, pacf
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from pandas.plotting import autocorrelation_plot
@@ -22,10 +32,69 @@ style.use('ggplot')
 warnings.filterwarnings('ignore')
 
 
-class TimeSeriesDecompose:
-    def __init__(self, stock_ticker):
-        self.stock_ticker = stock_ticker
-        self.data = self.get_stock_data_from_ticker(self.stock_ticker)
+class StockDatapipeline:
+    """StockMarketDatapipeline Class Pass Proper Stock Ticker as Parameter in order to retrieve data"""
+
+    def __init__(self, stock_ticker: str):
+        """StockMarketDatapipeline Constructor"""
+        try:
+            style.use("ggplot")
+            load_dotenv(find_dotenv())
+            self.path = self.get_current_dir()
+            self.settings = self.load_settings()
+            self.logger = self.app_logger(self.settings["app_name"])
+            self.stock_ticker = stock_ticker
+            self.data = self.get_stock_data_from_ticker(stock_ticker)
+            self.logger.info(
+                f"Initialize StockMarketDataPipeline for: {stock_ticker}")
+        except Exception as e:
+            self.logger.error(f"Cannot initialize StockMarketDataPipeline")
+
+    def load_settings(self) -> json:
+        try:
+            settings = dict()
+            json_path = os.path.join(self.path, "data\data.json")
+            with open(json_path, "r") as file:
+                settings = json.load(file)
+                return settings
+        except OSError:
+            raise RuntimeError("Cannot Load JSON Data File")
+
+    @staticmethod
+    def app_logger(name: str) -> logging:
+        try:
+            path = os.path.dirname(os.path.realpath(__file__))
+            log_dir = os.path.join(path, "logs")
+            log_file = os.path.join(log_dir, f"{name}.log")
+            if not os.path.exists(log_dir):
+                os.mkdir(log_dir)
+
+            file_formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(message)s"
+            )
+            console_formatter = logging.Formatter(
+                "%(levelname)s -- %(message)s")
+
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(file_formatter)
+
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.DEBUG)
+            console_handler.setFormatter(console_formatter)
+
+            logger = logging.getLogger(name)
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
+            logger.setLevel(logging.DEBUG)
+            return logger
+        except OSError:
+            raise RuntimeError("Unable to Load App Logger")
+
+    @staticmethod
+    def get_current_dir():
+        """get current directory"""
+        return os.path.dirname(os.path.realpath(__file__))
 
     @staticmethod
     def get_stock_data_from_ticker(stock_ticker):
@@ -33,6 +102,124 @@ class TimeSeriesDecompose:
         data.reset_index(inplace=True)
         data.rename(columns={'index': 'Date'}, inplace=True)
         return data
+
+    def get_realtime_stock_price(self) -> BeautifulSoup:
+        """sending get request and retrieving html table using requests and beautiful soup,
+        finding price class using beautiful soup and passing html address for price
+        """
+        self.logger.info(
+            f"Getting Realtime Stock Price for {self.stock_ticker}")
+        try:
+            url = f"{self.settings['yfinance_url']}/{self.stock_ticker}"
+            page = requests.get(url)
+            soup = BeautifulSoup(page.text, "lxml")
+            price = soup.find(
+                self.settings["html_address"], class_=self.settings["html_class"]
+            ).text
+            self.logger.info(
+                f"Retrived Realtime Price Successfully {self.stock_ticker}: {price}"
+            )
+            return float(price)
+        except Exception as e:
+            self.logger.error(f"Cannot Get Realtime Stock Price for: {e}")
+
+    def plot_stock_ticker_data(self) -> None:
+        """plotting line chart for retrieved stock ticker data"""
+        try:
+            self.logger.info(f"Plotting Stock Data for {self.stock_ticker}")
+            data = self.data
+            plt.figure(figsize=(10, 7))
+            plt.title(
+                f"Price History Of {self.stock_ticker}",
+                fontsize=15,
+                color="black",
+                fontweight="bold",
+            )
+            plt.plot(data["Date"], data["Close"], color="#FE2E2E")
+            plt.ylabel("Price in USD", fontsize=15, fontweight="bold")
+            plt.xlabel("Date", fontsize=15, fontweight="bold")
+            plt.show()
+            self.logger.info("Stock Data Plot Successfully")
+        except Exception as e:
+            self.logger.error(f"{e}: Cannot Plot Data")
+
+    def download_market_info(self) -> None:
+        """It let's you download market info in csv file"""
+        self.logger.info(f"Downloading Market info for {self.stock_ticker}")
+        try:
+            sec = yf.Ticker(self.stock_ticker)
+
+            data = sec.history()
+            # print(data.head())
+
+            my_max = data["Close"].idxmax()
+            my_min = data["Close"].idxmin()
+            list_data = [
+                data,
+                my_max,
+                my_min,
+                sec.info,
+                sec.isin,
+                sec.major_holders,
+                sec.institutional_holders,
+                sec.dividends,
+                sec.splits,
+                sec.actions,
+                sec.calendar,
+                sec.recommendations,
+                sec.quarterly_earnings,
+                sec.earnings,
+                sec.financials,
+                sec.quarterly_financials,
+                sec.balance_sheet,
+                sec.quarterly_balance_sheet,
+                sec.cashflow,
+                sec.quarterly_cashflow,
+                sec.sustainability,
+                sec.options,
+            ]
+            with open(f"{(self.stock_ticker).upper()}_Market_Info.csv", "w") as f:
+                writer = csv.writer(f, delimiter="\t")
+                writer.writerows(zip(list_data))
+            self.logger.info("Market Info Download Successfully")
+        except Exception as e:
+            self.logger.error(f"Cannot Download Market Data: {e}")
+
+    def download_stock_ticker_data(self) -> None:
+        """It let's you download stock ticker data in Excel File"""
+        try:
+            self.logger.info(
+                f"Downloading Stock Ticker Data {self.stock_ticker}")
+            data = self.data
+            data["Date"] = pd.to_datetime(data["Date"]).dt.date
+            writer = pd.ExcelWriter(
+                f"{(self.stock_ticker).lower()}_stock_data.xlsx")
+            data.to_excel(writer, sheet_name="stock_data",
+                          index=False, na_rep="NaN")
+            writer.sheets["stock_data"].set_column(0, 5, 15)
+            writer.save()
+            self.logger.info(f"Stock Data Downloaded Successfully")
+        except Exception as e:
+            self.logger.error(f"Cannot Download stock ticker data: {e}")
+
+    def get_current_stock_open_price(self) -> BeautifulSoup:
+        """sending get request and retrieving html table using requests and beautiful soup,
+        finding price class using beautiful soup and passing html address for open price
+        """
+        self.logger.info(f"Getting Current Open Price for {self.stock_ticker}")
+        try:
+            url = f"{self.settings['yfinance_url']}/{self.stock_ticker}"
+            page = requests.get(url)
+            soup = BeautifulSoup(page.text, "lxml")
+            price = soup.find(
+                self.settings["open_address"], class_=self.settings["open_class"]
+            ).text
+            self.logger.info(
+                f"Retrived Open Price Successfully {self.stock_ticker}: {price}"
+            )
+            return price
+        except Exception as e:
+            self.logger.error(f"Cannot Get Open Price for: {e}")
 
     def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=100):
         plt.figure(figsize=(15, 4), dpi=dpi)
@@ -253,4 +440,5 @@ class TimeSeriesDecompose:
         plt.show()
 
 
-TimeSeriesDecompose(stock_ticker='BTC-USD')
+if __name__ == "__main__":
+    StockDatapipeline("AAPL").plot_macd()
