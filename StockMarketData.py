@@ -42,7 +42,8 @@ class StockMarketDatapipeline:
             self.api_key_secrets = os.environ["api_key_secret"]
             self.access_token = os.environ["access_token"]
             self.access_token_secrets = os.environ["access_token_secret"]
-            self.logger.info(f"Initialize StockMarketDataPipeline for: {stock_ticker}")
+            self.logger.info(
+                f"Initialize StockMarketDataPipeline for: {stock_ticker}")
         except Exception as e:
             self.logger.error(f"Cannot initialize StockMarketDataPipeline")
 
@@ -68,7 +69,8 @@ class StockMarketDatapipeline:
             file_formatter = logging.Formatter(
                 "%(asctime)s - %(levelname)s - %(message)s"
             )
-            console_formatter = logging.Formatter("%(levelname)s -- %(message)s")
+            console_formatter = logging.Formatter(
+                "%(levelname)s -- %(message)s")
 
             file_handler = logging.FileHandler(log_file)
             file_handler.setLevel(logging.DEBUG)
@@ -97,7 +99,8 @@ class StockMarketDatapipeline:
             self.logger.info(f"Fetching data for {self.stock_ticker}")
             data = yf.download(self.stock_ticker)["Close"]
             data = pd.DataFrame(data, columns=["Close"])
-            data.interpolate(method="linear", limit_direction="backward", inplace=True)
+            data.interpolate(
+                method="linear", limit_direction="backward", inplace=True)
             data.reset_index(inplace=True)
             cols = {"Date": "Date", "Close": "Price"}
             data.rename(columns=cols, inplace=True)
@@ -110,7 +113,8 @@ class StockMarketDatapipeline:
         """sending get request and retrieving html table using requests and beautiful soup,
         finding price class using beautiful soup and passing html address for price
         """
-        self.logger.info(f"Getting Realtime Stock Price for {self.stock_ticker}")
+        self.logger.info(
+            f"Getting Realtime Stock Price for {self.stock_ticker}")
         try:
             url = f"{self.settings['yfinance_url']}/{self.stock_ticker}"
             page = requests.get(url)
@@ -190,11 +194,14 @@ class StockMarketDatapipeline:
     def download_stock_ticker_data(self) -> None:
         """It let's you download stock ticker data in Excel File"""
         try:
-            self.logger.info(f"Downloading Stock Ticker Data {self.stock_ticker}")
+            self.logger.info(
+                f"Downloading Stock Ticker Data {self.stock_ticker}")
             data = self.get_stock_data_from_ticker()
             data["Date"] = pd.to_datetime(data["Date"]).dt.date
-            writer = pd.ExcelWriter(f"{(self.stock_ticker).lower()}_stock_data.xlsx")
-            data.to_excel(writer, sheet_name="stock_data", index=False, na_rep="NaN")
+            writer = pd.ExcelWriter(
+                f"{(self.stock_ticker).lower()}_stock_data.xlsx")
+            data.to_excel(writer, sheet_name="stock_data",
+                          index=False, na_rep="NaN")
             writer.sheets["stock_data"].set_column(0, 1, 15)
             writer.save()
             self.logger.info(f"Stock Data Downloaded Successfully")
@@ -206,7 +213,8 @@ class StockMarketDatapipeline:
         df = pd.DataFrame()
         for stock in stock_ticker_list:
             df[stock] = web.DataReader(stock, data_source="yahoo")["Adj Close"]
-        df.interpolate(method="index", limit_direction="backward", inplace=True)
+        df.interpolate(
+            method="index", limit_direction="backward", inplace=True)
         df.reset_index(inplace=True)
         df.rename(columns={"index": "Date"}, inplace=True)
         print(df.head())
@@ -318,7 +326,8 @@ class StockMarketDatapipeline:
     def __count_values_in_column(cls, data, feature):
         total = data.loc[:, feature].value_counts(dropna=False)
         percentage = round(
-            data.loc[:, feature].value_counts(dropna=False, normalize=True) * 100, 2
+            data.loc[:, feature].value_counts(
+                dropna=False, normalize=True) * 100, 2
         )
         return pd.concat([total, percentage], axis=1, keys=["Total", "Percentage"])
 
@@ -333,10 +342,12 @@ class StockMarketDatapipeline:
     def plot_tweet_sentiment_donut_chart(self):
         pichart = self.get_tweets_sentiments_percentage()
         names = pichart.index
-        size = pichart["Percentage"]
+        size = pichart['Percentage']
         my_circle = plt.Circle((0, 0), 0.7, color="white")
-        plt.pie(size, labels=names, colors=["green", "blue", "red"])
+        plt.pie(size, autopct='%1.0f%%', textprops={'fontsize': 16}, labels=names,
+                colors=['#fab1a0', '#74b9ff', '#ff7675'])
         p = plt.gcf()
+        plt.legend(loc="best")
         p.gca().add_artist(my_circle)
         plt.show()
 
@@ -372,7 +383,8 @@ class StockMarketDatapipeline:
 
     def get_tweets_word_count_and_len(self):
         tweet_list_df = self.get_tweets_sentiments()
-        tweet_list_df["text_len"] = tweet_list_df["cleaned"].astype(str).apply(len)
+        tweet_list_df["text_len"] = tweet_list_df["cleaned"].astype(
+            str).apply(len)
         tweet_list_df["text_word_count"] = tweet_list_df["cleaned"].apply(
             lambda x: len(str(x).split())
         )
@@ -381,7 +393,8 @@ class StockMarketDatapipeline:
             pd.DataFrame(tweet_list_df.groupby("sentiment").text_len.mean()), 2
         )
         word_count = round(
-            pd.DataFrame(tweet_list_df.groupby("sentiment").text_word_count.mean()), 2
+            pd.DataFrame(tweet_list_df.groupby(
+                "sentiment").text_word_count.mean()), 2
         )
         print(text_len.head())
         print((word_count.head()))
@@ -409,4 +422,4 @@ class StockMarketDatapipeline:
 
 
 if __name__ == "__main__":
-    StockMarketDatapipeline("META").get_current_stock_open_price()
+    StockMarketDatapipeline("AAPL").plot_tweet_sentiment_donut_chart()
