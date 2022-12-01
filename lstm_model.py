@@ -23,7 +23,7 @@ class LongShortTermMemory:
         self.test_size = 0.2
         self.zero_base = True
         self.lstm_neurons = 50
-        self.epochs = 20
+        self.epochs = 100
         self.batch_size = 32
         self.loss = 'mse'
         self.dropout = 0.24
@@ -125,7 +125,7 @@ class LongShortTermMemory:
             X_train, output_size=1, neurons=self.lstm_neurons, dropout=self.dropout, loss=self.loss,
             optimizer=self.optimizer)
         modelfit = model.fit(
-            X_train, y_train, validation_data=(X_test, y_test), epochs=self.epochs, batch_size=self.batch_size, verbose=1, shuffle=True)
+            X_train, y_train, validation_data=(X_test, y_test), epochs=self.epochs, batch_size=self.batch_size, verbose=1, shuffle=True, callbacks=self.get_callback())
 
         return modelfit, model
 
@@ -160,8 +160,9 @@ class LongShortTermMemory:
         targets = test_data[self.aim][self.window_len:]
         preds = test_data[self.aim].values[:-self.window_len] * (preds + 1)
         preds = pd.Series(index=targets.index, data=preds)
-        self.line_plot(targets, preds, 'actual', 'prediction', lw=4, stock_ticker=self.stock_ticker)
-        #plt.show()
+        self.line_plot(targets, preds, 'actual', 'prediction',
+                       lw=4, stock_ticker=self.stock_ticker)
+        # plt.show()
 
 
 if __name__ == "__main__":
