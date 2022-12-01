@@ -130,7 +130,7 @@ class FinViz:
         
         plt.show()
 
-    def plot(self):
+    def plot_daily_sentiment_barchart(self):
         parsed_and_scored_news = self.get_stock_news_sentiments()
         ticker = self.stock_ticker
         self.plot_daily_sentiment(parsed_and_scored_news, ticker)
@@ -148,13 +148,12 @@ class FinViz:
 
     def plot_sentiments_with_price(self):
         df = self.get_sentiments_with_price()
-        print(df)
         sns.set(rc={'figure.figsize': (13.0, 8.0)})
         ax = sns.lineplot(data=df['Close'], color="green",
                           label=f'{self.stock_ticker} Price')
         ax2 = plt.twinx()
         sns.lineplot(data=df["sentiment_score"],
-                     color="red", ax=ax2, label='Sentiment from News')
+                     color="red", ax=ax2, label=f'{self.stock_ticker} Sentiment Score from News')
 
         plt.title(
             label=f"{self.stock_ticker} Price with Stock News Sentiments")
@@ -163,4 +162,4 @@ class FinViz:
 
 
 if __name__ == "__main__":
-    FinViz(stock_ticker='NFLX').plot()
+    FinViz(stock_ticker='META').plot_sentiments_with_price()
