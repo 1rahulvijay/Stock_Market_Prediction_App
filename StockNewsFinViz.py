@@ -3,6 +3,7 @@ from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 import pandas as pd
 import seaborn as sns
+from textblob import TextBlob
 from datetime import date, timedelta, datetime
 # NLTK VADER for sentiment analysis
 import nltk
@@ -69,40 +70,64 @@ class FinViz:
 
     @staticmethod
     def score_news(parsed_news_df):
-        # Instantiate the sentiment intensity analyzer
-        vader = SentimentIntensityAnalyzer()
+        parsed_news_df[["polarity", "subjectivity"]] = parsed_news_df["headline"].apply(
+            lambda Text: pd.Series(TextBlob(Text).sentiment)
+        )
 
-        # Iterate through the headlines and get the polarity scores using vader
-        scores = parsed_news_df['headline'].apply(
-            vader.polarity_scores).tolist()
+        for index, row in parsed_news_df["headline"].iteritems():
+            score = SentimentIntensityAnalyzer().polarity_scores(row)
+            neg = score["neg"]
+            neu = score["neu"]
+            pos = score["pos"]
+            comp = score["compound"]
+            if comp <= -0.05:
+                parsed_news_df.loc[index, "sentiment"] = "negative"
+            elif comp >= 0.05:
+                parsed_news_df.loc[index, "sentiment"] = "positive"
+            else:
+                parsed_news_df.loc[index, "sentiment"] = "neutral"
+            parsed_news_df.loc[index, "neg"] = neg
+            parsed_news_df.loc[index, "neu"] = neu
+            parsed_news_df.loc[index, "pos"] = pos
+            parsed_news_df.loc[index, "compound"] = comp
+        # print(parsed_news_df.head())
 
-        # Convert the 'scores' list of dicts into a DataFrame
-        scores_df = pd.DataFrame(scores)
-
-        # Join the DataFrames of the news and the list of dicts
-        parsed_and_scored_news = parsed_news_df.join(
-            scores_df, rsuffix='_right')
-        parsed_and_scored_news = parsed_and_scored_news.set_index('datetime')
+        parsed_and_scored_news = parsed_news_df.set_index('datetime')
+        # print(parsed_and_scored_news)
         parsed_and_scored_news = parsed_and_scored_news.drop(
             columns=['date', 'time'])
         parsed_and_scored_news = parsed_and_scored_news.rename(
             columns={"compound": "sentiment_score"})
+        # print(parsed_and_scored_news)
 
         return parsed_and_scored_news
 
     def get_stock_news_sentiments(self):
         parsed_news_df = self.get_news_df()
         parsed_and_scored_news = self.score_news(parsed_news_df)
+        # print(parsed_and_scored_news)
         return parsed_and_scored_news
 
     def plot_daily_sentiment(self, parsed_and_scored_news, ticker):
 
         # Group by date and ticker columns from scored_news and calculate the mean
-        mean_scores = parsed_and_scored_news.resample('D').mean()
+        df = parsed_and_scored_news
+        df2 = df.reset_index()
+        df2['datetime'] = df2['datetime'].dt.date
+        df2.set_index('datetime', inplace=True)
+        #df2.sort_index(ascending=True, inplace=True)
+        # mean_scores = df.resample('D').mean()
+        # print(mean_scores)
+        # mean_scores.join(df2['sentiment'], how='left')
+        # print(mean_scores)
+        # print(mean_scores)
+        color = ['#74b9ff','#55efc4', '#d63031']
         fig = plt.figure(figsize=(12, 10))
-        sns.barplot(data=mean_scores, x=mean_scores.index,
-                    y=mean_scores['sentiment_score'], hue='sentiment_score').set(title=f"{self.stock_ticker} Daily Sentiment Scores")
+        sns.barplot(data=df2, x=df2.index,
+                    y=df2['sentiment_score'], hue=df2['sentiment'], palette=color)
         fig.autofmt_xdate()
+        plt.title(label=f"{self.stock_ticker} Daily Sentiment Scores")
+        
         plt.show()
 
     def plot(self):
@@ -130,11 +155,12 @@ class FinViz:
         ax2 = plt.twinx()
         sns.lineplot(data=df["sentiment_score"],
                      color="red", ax=ax2, label='Sentiment from News')
-        
-        plt.title(label=f"{self.stock_ticker} Price with Stock News Sentiments")
+
+        plt.title(
+            label=f"{self.stock_ticker} Price with Stock News Sentiments")
 
         plt.show()
 
 
 if __name__ == "__main__":
-    FinViz(stock_ticker='GOOGL').plot_sentiments_with_price()
+    FinViz(stock_ticker='NFLX').plot()
