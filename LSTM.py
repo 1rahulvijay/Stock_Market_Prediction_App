@@ -64,7 +64,7 @@ class LongShortTermMemory:
         ax.plot(line2, label=label2, linewidth=lw)
         ax.set_ylabel(stock_ticker, fontsize=14)
         ax.set_title(
-            f'{stock_ticker} Model', fontsize=16)
+            f'{stock_ticker} LSTM Model', fontsize=16)
         ax.legend(loc='best', fontsize=16)
         plt.show()
 
