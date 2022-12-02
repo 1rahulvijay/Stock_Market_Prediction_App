@@ -441,4 +441,4 @@ class StockDatapipeline:
 
 
 if __name__ == "__main__":
-    StockDatapipeline("AAPL").plot_macd()
+    StockDatapipeline("AAPL").plot_detrend()

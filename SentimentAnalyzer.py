@@ -341,12 +341,12 @@ class StockNews(StockTweets):
         # mean_scores.join(df2['sentiment'], how='left')
         # print(mean_scores)
         # print(mean_scores)
-        color = ['#74b9ff', '#55efc4', '#d63031']
+        color = ['#d63031', '#55efc4', '#74b9ff']
         fig = plt.figure(figsize=(12, 10))
         sns.barplot(data=df2, x=df2.index,
                     y=df2['sentiment_score'], hue=df2['sentiment'], palette=color)
         fig.autofmt_xdate()
-        plt.title(label=f"{self.stock_ticker} Daily Sentiment Scores")
+        plt.title(label=f"{self.stock_ticker} Daily News Sentiment Scores")
 
         plt.show()
 
@@ -376,11 +376,11 @@ class StockNews(StockTweets):
                      color="red", ax=ax2, label=f'{self.stock_ticker} Sentiment Score from News')
 
         plt.title(
-            label=f"{self.stock_ticker} Price with Stock News Sentiments")
+            label=f"{self.stock_ticker} Price with Daily Stock News Sentiments")
 
         plt.show()
 
 
 if __name__ == "__main__":
-    StockNews(stock_ticker='GOOGL').plot_sentiments_with_price()
+    StockNews(stock_ticker='GOOGL').plot_daily_sentiment_barchart()
     #StockTweets(stock_ticker='GOOGL').plot_word_cloud()
