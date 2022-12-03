@@ -187,12 +187,11 @@ class XGBoostModel:
 
     @staticmethod
     def get_moving_average(df, column):
-        df['EMA_7'] = df[column].ewm(7).mean().shift()
-        df['EMA_15'] = df[column].ewm(15).mean().shift()
-        df['EMA_30'] = df[column].ewm(30).mean().shift()
-        df['SMA_50'] = df[column].rolling(50).mean().shift()
-        df['SMA_7'] = df[column].rolling(7).mean().shift()
-        df['SMA_30'] = df[column].rolling(30).mean().shift()
+        df['EMA_9'] = df['Close'].ewm(9).mean().shift()
+        df['SMA_5'] = df['Close'].rolling(5).mean().shift()
+        df['SMA_10'] = df['Close'].rolling(10).mean().shift()
+        df['SMA_15'] = df['Close'].rolling(15).mean().shift()
+        df['SMA_30'] = df['Close'].rolling(30).mean().shift()
         return df
 
     def get_data(self):
@@ -277,7 +276,7 @@ class XGBoostModel:
         predicted_prices['Close'] = y_pred
 
         plt.figure(figsize=(15, 8))
-        sns.lineplot(y=y_test, x=predicted_prices.Date)
+        sns.lineplot(y=y_test, x=predicted_prices.Date, palette=['green'])
         sns.lineplot(y=y_pred, x=predicted_prices.Date)
         plt.legend(['Predicted', 'Actual'])
         plt.title(f'{self.stock_ticker} XGBoost Model')
@@ -285,4 +284,5 @@ class XGBoostModel:
 
 
 if __name__ == "__main__":
+    LongShortTermMemory(stock_ticker='RNDR-USD').plot_prediction()
     XGBoostModel(stock_ticker='RNDR-USD').plot_xgboost_prediction()

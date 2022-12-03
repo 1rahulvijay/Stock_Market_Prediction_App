@@ -128,7 +128,7 @@ class StockDatapipeline:
         try:
             self.logger.info(f"Plotting Stock Data for {self.stock_ticker}")
             data = self.data
-            plt.figure(figsize=(10, 7))
+            fig = plt.figure(figsize=(10, 7))
             plt.title(
                 f"Price History Of {self.stock_ticker}",
                 fontsize=15,
@@ -138,7 +138,7 @@ class StockDatapipeline:
             plt.plot(data["Date"], data["Close"], color="#FE2E2E")
             plt.ylabel("Price in USD", fontsize=15, fontweight="bold")
             plt.xlabel("Date", fontsize=15, fontweight="bold")
-            plt.show()
+            return fig
             self.logger.info("Stock Data Plot Successfully")
         except Exception as e:
             self.logger.error(f"{e}: Cannot Plot Data")
@@ -222,16 +222,16 @@ class StockDatapipeline:
             self.logger.error(f"Cannot Get Open Price for: {e}")
 
     def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=100):
-        plt.figure(figsize=(15, 4), dpi=dpi)
+        fig = plt.figure(figsize=(15, 4), dpi=dpi)
         plt.plot(x, y, color='tab:Red')
         plt.gca().set(title=title, xlabel=xlabel, ylabel=ylabel)
         plt.legend([self.stock_ticker])
-        plt.show()
+        return fig
 
     def plot_trend(self):
         df = self.data
-        self.__plot_trend(df, x=df['Date'], y=df['Close'],
-                          title=f'Trend and Seasonality for {self.stock_ticker}')
+        return self.__plot_trend(df, x=df['Date'], y=df['Close'],
+                                 title=f'Trend and Seasonality for {self.stock_ticker}')
 
     def plot_two_side_view(self):
         df = self.data
@@ -244,7 +244,7 @@ class StockDatapipeline:
         plt.title(f'{self.stock_ticker} (Two Side View)', fontsize=16)
         plt.hlines(y=0, xmin=np.min(df['Date']),
                    xmax=np.max(df['Date']), linewidth=.5)
-        plt.show()
+        return fig
 
     def plot_multiplicative_decompose(self):
         # Multiplicative Decomposition
@@ -253,12 +253,12 @@ class StockDatapipeline:
             df['Close'], model='multiplicative', period=30)
 
         # Plot
-        plt.rcParams.update({'figure.figsize': (16, 12)})
+        fig = plt.rcParams.update({'figure.figsize': (10, 7)})
         multiplicative_decomposition.plot().suptitle(
             'Multiplicative Decomposition', fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-        plt.show()
+        return fig
 
     def plot_additive_decomposition(self):
         df = self.data
@@ -266,29 +266,31 @@ class StockDatapipeline:
         additive_decomposition = seasonal_decompose(
             df['Close'], model='additive', period=30)
 
-        plt.rcParams.update({'figure.figsize': (16, 12)})
+        fig = plt.rcParams.update({'figure.figsize': (16, 12)})
         additive_decomposition.plot().suptitle('Additive Decomposition', fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-        plt.show()
+        return fig
 
     def plot_detrend(self):
         df = self.data
         detrended = signal.detrend(df['Close'].values)
+        fig = plt.figure(figsize=(7, 5))
         plt.plot(detrended)
         plt.title(
             f'{self.stock_ticker} Price detrended by subtracting the least squares fit', fontsize=16)
-        plt.show()
+        return fig
 
     def plot_detrend_seasonal_decompose(self):
         df = self.data
         result_mul = seasonal_decompose(
             df['Close'], model='multiplicative', period=30)
         detrended = df['Close'].values - result_mul.trend
+        fig = plt.figure(figsize=(7, 5))
         plt.plot(detrended)
         plt.title(
             f'{self.stock_ticker} Price detrended by subtracting the trend component', fontsize=16)
-        plt.show()
+        return fig
 
     def plot_price_deseasonlized(self):
         df = self.data
@@ -299,17 +301,19 @@ class StockDatapipeline:
         deseasonalized = df['Close'].values / result_mul.seasonal
 
         # Plot
+        fig = plt.figure(figsize=(7, 5))
         plt.plot(deseasonalized)
         plt.title(f'{self.stock_ticker} Price Deseasonalized', fontsize=16)
-        plt.show()
+        return fig
 
     def plot_autocorrelation(self):
         df = self.data
-        plt.rcParams.update({'figure.figsize': (10, 6), 'figure.dpi': 120})
+        fig = plt.rcParams.update(
+            {'figure.figsize': (10, 6), 'figure.dpi': 120})
         autocorrelation_plot(df['Close'].tolist())
         plt.title(
             f'{self.stock_ticker} Autocorrelation', fontsize=16)
-        plt.show()
+        return fig
 
     def plot_acf_pacf(self):
         df = self.data
@@ -318,7 +322,7 @@ class StockDatapipeline:
                  title=f'{self.stock_ticker} Autocorrelation')
         plot_pacf(df['Close'].tolist(), lags=50, ax=axes[1],
                   title=f'{self.stock_ticker} Partial Autocorrelation')
-        plt.show()
+        return fig
 
     def plot_lag(self):
         df = self.data
@@ -329,7 +333,7 @@ class StockDatapipeline:
             ax.set_title('Lag ' + str(i+1))
 
         fig.suptitle(f'Lag Plots of {self.stock_ticker}', y=1.05)
-        plt.show()
+        return fig
 
     def __get_ema(self):
         df = self.data
@@ -340,7 +344,7 @@ class StockDatapipeline:
 
     @staticmethod
     def __plot_sma(df, stock_ticker, sma, days):
-        plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(df['Close'], 'k-', label='Original')
         plt.plot(df[f'{sma}'], 'r-', label='Running average')
         plt.ylabel('Price')
@@ -349,22 +353,23 @@ class StockDatapipeline:
         plt.fill_between(df.index, 0, df[f'{sma}'], color='r', alpha=0.1)
         plt.legend(loc='upper left')
         plt.title(f'{stock_ticker} {days} Days Simple Moving Average')
-        plt.show()
+        # plt.show()
+        return fig
 
     def plot_100_days_sma(self):
         df = self.__get_ema()
-        self.__plot_sma(df=df, stock_ticker=self.stock_ticker,
-                        sma='SMA_100', days=100)
+        return self.__plot_sma(df=df, stock_ticker=self.stock_ticker,
+                               sma='SMA_100', days=100)
 
     def plot_200_days_sma(self):
         df = self.__get_ema()
-        self.__plot_sma(df=df, stock_ticker=self.stock_ticker,
-                        sma='SMA_200', days=200)
+        return self.__plot_sma(df=df, stock_ticker=self.stock_ticker,
+                               sma='SMA_200', days=200)
 
     def plot_50_days_sma(self):
         df = self.__get_ema()
-        self.__plot_sma(df=df, stock_ticker=self.stock_ticker,
-                        sma='SMA_50', days=50)
+        return self.__plot_sma(df=df, stock_ticker=self.stock_ticker,
+                               sma='SMA_50', days=50)
 
     @staticmethod
     def __plot_combined_moving_average(df, ma1, ma2, title):
@@ -373,8 +378,7 @@ class StockDatapipeline:
 
         xdate = [x for x in df.Date]
 
-        plt.figure(figsize=(15, 5))
-        plt.style.use('ggplot')
+        fig = plt.figure(figsize=(7, 5))
 
         plt.plot(xdate, df.Close, lw=1, color="black", label="Price")
         plt.plot(xdate, ma_1, lw=3, linestyle="dotted",
@@ -385,11 +389,11 @@ class StockDatapipeline:
         plt.xlabel('Date')
         plt.ylabel('Price')
         plt.title(title)
-        plt.show()
+        return fig
 
     def plot_week_and_month_moving_average(self):
         df = self.data
-        self.__plot_combined_moving_average(
+        return self.__plot_combined_moving_average(
             df=df, ma1=7, ma2=30, title=f"{self.stock_ticker} 7 Days and 30 Days Moving Average")
 
     @staticmethod
@@ -410,14 +414,14 @@ class StockDatapipeline:
     def plot_rsi(self):
         df = self.data
         df['RSI'] = self.__relative_strength_idx(df=df, n=14)
-        plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(df['Date'], df['RSI'], label="RSI")
         plt.ylabel('RSI')
         plt.xlabel('Date')
         plt.grid(linestyle=':')
         plt.legend(loc='upper left')
         plt.title(f'{self.stock_ticker} Relative Strength Index')
-        plt.show()
+        return fig
 
     @staticmethod
     def __get_macd_and_ema(df):
@@ -430,14 +434,14 @@ class StockDatapipeline:
 
     def plot_macd(self):
         df = self.__get_macd_and_ema(self.data)
-        plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(df['Date'], df['MACD'], label='MACD')
         plt.plot(df['Date'], df['MACD_signal'], label='MACD Signal')
         plt.xlabel('Date')
         plt.grid(linestyle=':')
         plt.legend(loc='upper left')
         plt.title(f'{self.stock_ticker} MACD and MACD Signal')
-        plt.show()
+        return fig
 
 
 if __name__ == "__main__":
