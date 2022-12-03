@@ -221,8 +221,22 @@ class StockDatapipeline:
         except Exception as e:
             self.logger.error(f"Cannot Get Open Price for: {e}")
 
+    def get_stock_volume(self) -> BeautifulSoup:
+        """sending get request and retrieving html table using requests and beautiful soup,
+        finding price class using beautiful soup and passing html address for open price
+        """
+        self.logger.info(f"Getting Stock Volume for {self.stock_ticker}")
+        try:
+            url = f"{self.settings['yfinance_url']}/{self.stock_ticker}"
+            df = pd.read_html(url)
+            df = df[0]
+            volume = df[1].iloc[6]
+            return volume
+        except Exception as e:
+            self.logger.error(f"Cannot Get Stock Volume: {e}")
+
     def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=100):
-        fig = plt.figure(figsize=(15, 4), dpi=dpi)
+        fig = plt.figure(figsize=(10, 7), dpi=dpi)
         plt.plot(x, y, color='tab:Red')
         plt.gca().set(title=title, xlabel=xlabel, ylabel=ylabel)
         plt.legend([self.stock_ticker])
@@ -237,7 +251,7 @@ class StockDatapipeline:
         df = self.data
         x = df['Date'].values
         y1 = df['Close'].values
-        fig, ax = plt.subplots(1, 1, figsize=(16, 5), dpi=120)
+        fig, ax = plt.subplots(1, 1, figsize=(10, 7), dpi=120)
         plt.fill_between(x, y1=y1, y2=-y1, alpha=0.5,
                          linewidth=2, color='seagreen')
         #plt.ylim(-800, 800)
@@ -266,7 +280,7 @@ class StockDatapipeline:
         additive_decomposition = seasonal_decompose(
             df['Close'], model='additive', period=30)
 
-        fig = plt.rcParams.update({'figure.figsize': (16, 12)})
+        fig = plt.rcParams.update({'figure.figsize': (10, 7)})
         additive_decomposition.plot().suptitle('Additive Decomposition', fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
@@ -301,7 +315,7 @@ class StockDatapipeline:
         deseasonalized = df['Close'].values / result_mul.seasonal
 
         # Plot
-        fig = plt.figure(figsize=(7, 5))
+        fig = plt.figure(figsize=(10, 7))
         plt.plot(deseasonalized)
         plt.title(f'{self.stock_ticker} Price Deseasonalized', fontsize=16)
         return fig
@@ -309,7 +323,7 @@ class StockDatapipeline:
     def plot_autocorrelation(self):
         df = self.data
         fig = plt.rcParams.update(
-            {'figure.figsize': (10, 6), 'figure.dpi': 120})
+            {'figure.figsize': (10, 7), 'figure.dpi': 120})
         autocorrelation_plot(df['Close'].tolist())
         plt.title(
             f'{self.stock_ticker} Autocorrelation', fontsize=16)
@@ -317,7 +331,7 @@ class StockDatapipeline:
 
     def plot_acf_pacf(self):
         df = self.data
-        fig, axes = plt.subplots(1, 2, figsize=(16, 3), dpi=100)
+        fig, axes = plt.subplots(1, 2, figsize=(10, 7), dpi=100)
         plot_acf(df['Close'].tolist(), lags=50, ax=axes[0],
                  title=f'{self.stock_ticker} Autocorrelation')
         plot_pacf(df['Close'].tolist(), lags=50, ax=axes[1],
@@ -327,7 +341,7 @@ class StockDatapipeline:
     def plot_lag(self):
         df = self.data
         fig, axes = plt.subplots(1, 4, figsize=(
-            10, 3), sharex=True, sharey=True, dpi=100)
+            10, 7), sharex=True, sharey=True, dpi=100)
         for i, ax in enumerate(axes.flatten()[:4]):
             lag_plot(df['Close'], lag=i+1, ax=ax, c='firebrick')
             ax.set_title('Lag ' + str(i+1))
@@ -344,7 +358,7 @@ class StockDatapipeline:
 
     @staticmethod
     def __plot_sma(df, stock_ticker, sma, days):
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 7))
         plt.plot(df['Close'], 'k-', label='Original')
         plt.plot(df[f'{sma}'], 'r-', label='Running average')
         plt.ylabel('Price')
@@ -378,7 +392,7 @@ class StockDatapipeline:
 
         xdate = [x for x in df.Date]
 
-        fig = plt.figure(figsize=(7, 5))
+        fig = plt.figure(figsize=(10, 7))
 
         plt.plot(xdate, df.Close, lw=1, color="black", label="Price")
         plt.plot(xdate, ma_1, lw=3, linestyle="dotted",
@@ -414,7 +428,7 @@ class StockDatapipeline:
     def plot_rsi(self):
         df = self.data
         df['RSI'] = self.__relative_strength_idx(df=df, n=14)
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 7))
         plt.plot(df['Date'], df['RSI'], label="RSI")
         plt.ylabel('RSI')
         plt.xlabel('Date')
@@ -434,7 +448,7 @@ class StockDatapipeline:
 
     def plot_macd(self):
         df = self.__get_macd_and_ema(self.data)
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 7))
         plt.plot(df['Date'], df['MACD'], label='MACD')
         plt.plot(df['Date'], df['MACD_signal'], label='MACD Signal')
         plt.xlabel('Date')
@@ -445,4 +459,4 @@ class StockDatapipeline:
 
 
 if __name__ == "__main__":
-    StockDatapipeline("AAPL").plot_detrend()
+    StockDatapipeline("AAPL").get_previous_stock_close()
