@@ -25,6 +25,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import yfinance as yf
 from datetime import date, timedelta, datetime
+import warnings
+from warnings import simplefilter
+simplefilter(action='ignore', category=FutureWarning)
+simplefilter(action='ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore')
 
 
 class StockTweets():
@@ -383,4 +388,4 @@ class StockNews(StockTweets):
 
 if __name__ == "__main__":
     StockNews(stock_ticker='GOOGL').plot_daily_sentiment_barchart()
-    #StockTweets(stock_ticker='GOOGL').plot_word_cloud()
+    # StockTweets(stock_ticker='GOOGL').plot_word_cloud()

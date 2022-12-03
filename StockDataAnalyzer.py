@@ -45,8 +45,8 @@ class StockDatapipeline:
             self.logger = self.app_logger(self.settings["app_name"])
             self.stock_ticker = stock_ticker
             self.data = self.get_stock_data_from_ticker(stock_ticker)
-            self.logger.info(
-                f"Initialize StockMarketDataPipeline for: {stock_ticker}")
+            # self.logger.info(
+            #     f"Initialize StockMarketDataPipeline for: {stock_ticker}")
         except Exception as e:
             self.logger.error(f"Cannot initialize StockMarketDataPipeline")
 
