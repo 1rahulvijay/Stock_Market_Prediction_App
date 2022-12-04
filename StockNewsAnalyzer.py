@@ -32,7 +32,7 @@ simplefilter(action='ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore')
 
 
-class StockTweets():
+class StockTweets:
     def __init__(self, stock_ticker):
         nltk.download("vader_lexicon")
         style.use("ggplot")

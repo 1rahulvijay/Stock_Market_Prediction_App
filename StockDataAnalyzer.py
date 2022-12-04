@@ -26,6 +26,7 @@ from warnings import simplefilter
 import warnings
 from pandas.plotting import lag_plot
 plt.rcParams.update({'ytick.left': False, 'axes.titlepad': 10})
+# plt.rcParams.update({'font.size': 4})
 simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
 style.use('ggplot')
@@ -236,7 +237,7 @@ class StockDatapipeline:
         except Exception as e:
             self.logger.error(f"Cannot Get Stock Volume: {e}")
 
-    def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=100):
+    def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=200):
         fig = plt.figure(figsize=(7, 2), dpi=dpi)
         plt.plot(x, y, color='tab:Red')
         plt.gca().set(title=title, xlabel=xlabel, ylabel=ylabel)
@@ -246,13 +247,13 @@ class StockDatapipeline:
     def plot_trend(self):
         df = self.data
         return self.__plot_trend(df, x=df['Date'], y=df['Close'],
-                                 title=f'Trend and Seasonality for {self.stock_ticker}')
+                                 title=f'Trend and Seasonality {self.stock_ticker}')
 
     def plot_two_side_view(self):
         df = self.data
         x = df['Date'].values
         y1 = df['Close'].values
-        fig, ax = plt.subplots(1, 1, figsize=(10, 7), dpi=120)
+        fig, ax = plt.subplots(1, 1, figsize=(10, 9.5), dpi=120)
         plt.fill_between(x, y1=y1, y2=-y1, alpha=0.5,
                          linewidth=2, color='seagreen')
         #plt.ylim(-800, 800)
@@ -361,7 +362,8 @@ class StockDatapipeline:
 
     @staticmethod
     def __plot_sma(df, stock_ticker, sma, days):
-        fig = plt.figure(figsize=(10, 7))
+        df.set_index(df['Date'], inplace=True)
+        fig = plt.figure(figsize=(7, 2))
         plt.plot(df['Close'], 'k-', label='Original')
         plt.plot(df[f'{sma}'], 'r-', label='Running average')
         plt.ylabel('Price')
@@ -431,7 +433,7 @@ class StockDatapipeline:
     def plot_rsi(self):
         df = self.data
         df['RSI'] = self.__relative_strength_idx(df=df, n=14)
-        fig = plt.figure(figsize=(10, 7))
+        fig = plt.figure(figsize=(7, 2))
         plt.plot(df['Date'], df['RSI'], label="RSI")
         plt.ylabel('RSI')
         plt.xlabel('Date')
@@ -451,7 +453,7 @@ class StockDatapipeline:
 
     def plot_macd(self):
         df = self.__get_macd_and_ema(self.data)
-        fig = plt.figure(figsize=(10, 7))
+        fig = plt.figure(figsize=(7, 2))
         plt.plot(df['Date'], df['MACD'], label='MACD')
         plt.plot(df['Date'], df['MACD_signal'], label='MACD Signal')
         plt.xlabel('Date')

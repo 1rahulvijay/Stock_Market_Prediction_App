@@ -1,9 +1,13 @@
 import streamlit as st
 from PIL import Image
+import json
+from streamlit_option_menu import option_menu
 from StockDataAnalyzer import StockDatapipeline
 from StockNewsAnalyzer import StockNews, StockTweets
 from StockPredictionAnalyzer import LongShortTermMemory, XGBoostModel
-st.set_page_config(layout="wide")
+#from streamlit_lottie import st_lottie
+st.set_page_config(layout="wide", initial_sidebar_state='expanded',
+                   page_title="Stocks Analyzer", page_icon="chart_with_upwards_trend")
 
 
 class StockApp:
@@ -13,6 +17,7 @@ class StockApp:
         self.css = self.settings['css_file']
         self.local_css(self.css)
         self.stock_list = self.settings['stock_list']
+        # self.lottie = self.settings['lottie']
 
     @staticmethod
     def local_css(file_name):
@@ -20,9 +25,13 @@ class StockApp:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
     def layout(self):
-
-        stock = st.sidebar.selectbox(label='Available Stocks',
-                                     options=self.stock_list)
+        # with st.sidebar:
+        #     st_lottie(self.lottie, key='Hello')
+        # st_lottie(self.lottie)
+        stock = st.sidebar.selectbox(
+            label='Select Stocks', options=self.stock_list)
+    #    with st.container():
+    #        st_lottie(self.lottie, key="hello")
 
         curr_price = StockDatapipeline(
             stock_ticker=stock).get_realtime_stock_price()
@@ -33,7 +42,26 @@ class StockApp:
         b1, b2, b3 = st.columns(3)
         b1.metric("Stock Price", str(curr_price)+' USD')
         b2.metric("Open", str(curr_open)+' USD')
-        b3.metric("Volume", str(float(curr_vol))+' USD')
+        b3.metric("Volume", str(curr_vol)+' USD')
+
+        with st.container():
+            selected = option_menu("Technical Analysis", ["", "RSI", 'MACD', '50D SMA', '100D SMA', '200D SMA'],
+                                   menu_icon="cast", orientation="horizontal", default_index=0)
+
+            if selected == "RSI":
+                st.pyplot(fig=StockDatapipeline(stock_ticker=stock).plot_rsi())
+            if selected == "MACD":
+                st.pyplot(fig=StockDatapipeline(
+                    stock_ticker=stock).plot_macd())
+            if selected == "50D SMA":
+                st.pyplot(fig=StockDatapipeline(
+                    stock_ticker=stock).plot_50_days_sma())
+            if selected == "100D SMA":
+                st.pyplot(fig=StockDatapipeline(
+                    stock_ticker=stock).plot_100_days_sma())
+            if selected == "200D SMA":
+                st.pyplot(fig=StockDatapipeline(
+                    stock_ticker=stock).plot_200_days_sma())
 
         with st.sidebar:
             col1, col3 = st.columns(2)
@@ -49,70 +77,21 @@ class StockApp:
                         stock_ticker=stock).download_market_info()
                     st.write('## Market Info Downloaded')
 
-        # with st.container():
-        #     st.markdown('### Stock Price Chart')
-        #     st.pyplot(fig=StockDatapipeline(
-        #         stock_ticker=stock).plot_stock_ticker_data())
-
         with st.container():
-            col4, col5, col6 = st.columns(3)
-            with col4:
-                if st.button(label='50D SMA'):
-                    with st.container():
-                        st.markdown('## 50 Day Moving Average')
-                        st.pyplot(fig=StockDatapipeline(
-                            stock_ticker=stock).plot_50_days_sma())
-
-            with col5:
-                if st.button(label="100D SMA"):
-                    with st.container():
-                        st.markdown('## Generating 100 Day Moving Average')
-                        st.pyplot(fig=StockDatapipeline(
-                            stock_ticker=stock).plot_100_days_sma())
-
-            with col6:
-                if st.button(label="200D SMA"):
-                    with st.container():
-                        st.markdown('## Generating 200 Day Moving Average')
-                        st.pyplot(fig=StockDatapipeline(
-                            stock_ticker=stock).plot_100_days_sma())
-        with st.container():
-            col7, col8, col9 = st.columns(3)
-            with col7:
-                if st.button(label='Relative strength index'):
-                    with st.container():
-                        st.markdown('## Generating Relative Strength Index')
-                        st.pyplot(fig=StockDatapipeline(
-                            stock_ticker=stock).plot_rsi())
-
-            with col8:
-                if st.button(label="MACD"):
-                    with st.container():
-                        st.markdown('## Generating MACD Index')
-                        st.pyplot(fig=StockDatapipeline(
-                            stock_ticker=stock).plot_macd())
-
-            with col9:
-                if st.button(label="Week Month SMA"):
-                    with st.container():
-                        st.markdown('## Generating Moving Average Combined ')
-                        st.pyplot(fig=StockDatapipeline(
-                            stock_ticker=stock).plot_week_and_month_moving_average())
-
-        with st.container():
-            st.markdown('### Weekly and Monthly Moving Average')
+            st.markdown('### Stock Price Chart')
             st.pyplot(fig=StockDatapipeline(
                 stock_ticker=stock).plot_trend())
 
-        d1, d2 = st.columns((5, 5))
-        with d1:
+        c1, c2 = st.columns((5, 5))
+        with c1:
+            st.markdown('### Two Side View')
+            st.pyplot(fig=StockDatapipeline(
+                stock_ticker=stock).plot_two_side_view())
+
+        with c2:
             st.markdown('### Tweets Sentiment Overview')
             st.pyplot(fig=StockNews(
                 stock_ticker=stock).plot_tweet_sentiment_donut_chart())
-        with d2:
-            st.markdown('### Stock Two Side View')
-            st.pyplot(fig=StockDatapipeline(
-                stock_ticker=stock).plot_two_side_view())
 
         with st.container():
             st.markdown('### Daily News Sentiments')

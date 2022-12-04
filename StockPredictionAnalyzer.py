@@ -233,7 +233,7 @@ class XGBoostModel:
         y_test = test_df['Close'].copy()
         X_test = test_df.drop(columns=['Close'])
 
-        print(y_train, X_train, y_valid, X_valid, y_test, X_test)
+        #print(y_train, X_train, y_valid, X_valid, y_test, X_test)
         return y_train, X_train, y_valid, X_valid, y_test, X_test
 
     def build_and_train_model(self):
