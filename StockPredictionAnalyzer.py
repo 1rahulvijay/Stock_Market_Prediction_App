@@ -68,14 +68,14 @@ class LongShortTermMemory:
 
     @staticmethod
     def line_plot(line1, line2, label1=None, label2=None, lw=2, stock_ticker=None):
-        fig, ax = plt.subplots(1, figsize=(13, 7))
+        fig, ax = plt.subplots(1, figsize=(7, 3))
         ax.plot(line1, label=label1, linewidth=lw)
         ax.plot(line2, label=label2, linewidth=lw)
         ax.set_ylabel(stock_ticker, fontsize=14)
         ax.set_title(
             f'{stock_ticker} LSTM Model', fontsize=16)
         ax.legend(loc='best', fontsize=16)
-        plt.show()
+        return fig
 
     def plot_train_test_split(self):
         train_data, test_data = self.get_dynamic_train_test_data()
@@ -158,7 +158,7 @@ class LongShortTermMemory:
         r2_sco = r2_score(y_test, preds)
         r2_sco = r2_sco*100
 
-        print(r2_sco, mean_absoulte_err)
+        #print(r2_sco, mean_absoulte_err)
         return preds
 
     def plot_prediction(self):
@@ -168,8 +168,8 @@ class LongShortTermMemory:
         targets = test_data[self.aim][self.window_len:]
         preds = test_data[self.aim].values[:-self.window_len] * (preds + 1)
         preds = pd.Series(index=targets.index, data=preds)
-        self.line_plot(targets, preds, 'actual', 'prediction',
-                       lw=4, stock_ticker=self.stock_ticker)
+        return self.line_plot(targets, preds, 'actual', 'prediction',
+                       lw=2, stock_ticker=self.stock_ticker)
         # plt.show()
 
 
@@ -207,14 +207,14 @@ class XGBoostModel:
         drop_cols = ['Date']
         df = self.get_data()
         df.reset_index(inplace=True)
-        print(df)
+        #print(df)
 
         test_split_idx = int(round(df.shape[0] * (1-self.test_size)))
         valid_split_idx = int(round(
             df.shape[0] * (1-(self.valid_size+self.test_size))))
 
-        print(test_split_idx)
-        print(valid_split_idx)
+        # print(test_split_idx)
+        # print(valid_split_idx)
 
         train_df = df.loc[:valid_split_idx].copy()
         valid_df = df.loc[valid_split_idx+1:test_split_idx].copy()
@@ -261,8 +261,8 @@ class XGBoostModel:
         y_train, X_train, y_valid, X_valid, y_test, X_test = self.split_data()
         model = self.build_and_train_model()
         y_pred = self.y_pred(model=model, X_test=X_test)
-        print(y_pred)
-        print(f'mean_squared_error = {mean_squared_error(y_test, y_pred)}')
+        # print(y_pred)
+        # print(f'mean_squared_error = {mean_squared_error(y_test, y_pred)}')
         return y_pred
 
     def plot_xgboost_prediction(self):
@@ -275,12 +275,12 @@ class XGBoostModel:
         predicted_prices = df.loc[test_split_idx+1:].copy()
         predicted_prices['Close'] = y_pred
 
-        plt.figure(figsize=(15, 8))
+        fig = plt.figure(figsize=(7, 3))
         sns.lineplot(y=y_test, x=predicted_prices.Date, palette=['green'])
         sns.lineplot(y=y_pred, x=predicted_prices.Date)
         plt.legend(['Predicted', 'Actual'])
         plt.title(f'{self.stock_ticker} XGBoost Model')
-        plt.show()
+        return fig
 
 
 if __name__ == "__main__":

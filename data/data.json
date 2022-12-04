@@ -6,6 +6,19 @@
     "word_cloud_temp": "data\\template.png",
     "generated_word_cloud": "data\\generated_wordcloud.png",
     "open_class": "Ta(end) Fw(600) Lh(14px)",
-    "open_address": "td"
-
+    "open_address": "td",
+    "css_file": "style\\style.css",
+    "stock_list": [
+        "GOOGL",
+        "BABA",
+        "NFLX",
+        "AAPL",
+        "MSFT",
+        "META",
+        "AMZN",
+        "TSLA",
+        "NVDA",
+        "TSM",
+        "WMT"
+    ]
 }

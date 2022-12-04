@@ -34,9 +34,9 @@ warnings.filterwarnings('ignore')
 
 class StockTweets():
     def __init__(self, stock_ticker):
-        self.stock_ticker = stock_ticker
         nltk.download("vader_lexicon")
         style.use("ggplot")
+        self.stock_ticker = stock_ticker
         load_dotenv(find_dotenv())
         self.path = self.get_current_dir()
         self.settings = self.load_settings()
@@ -180,13 +180,15 @@ class StockTweets():
         pichart = self.get_tweets_sentiments_percentage()
         names = pichart.index
         size = pichart['Percentage']
+        fig = plt.figure(figsize=(10, 7))
         my_circle = plt.Circle((0, 0), 0.7, color="white")
         plt.pie(size, autopct='%1.0f%%', textprops={'fontsize': 16}, labels=names,
                 colors=['#fab1a0', '#74b9ff', '#ff7675'])
         p = plt.gcf()
+        plt.title(label=f'{self.stock_ticker} Tweets Sentiments')
         plt.legend(loc="best")
         p.gca().add_artist(my_circle)
-        plt.show()
+        return fig
 
     def __get_image(self):
         image_temp = os.path.join(
@@ -212,7 +214,7 @@ class StockTweets():
         wc.to_file(image_save)
         #print("Word Cloud Saved Successfully")
         plt.imshow(mpimg.imread(image_save))
-        plt.show()
+        
 
     def plot_word_cloud(self):
         tweet_list_df = self.get_tweets_sentiments()
@@ -244,7 +246,7 @@ class StockNews(StockTweets):
     def __init__(self, stock_ticker):
         super().__init__(stock_ticker)
         self.finviz_url = 'https://finviz.com/quote.ashx?t='
-        print(date.today(), date.today() - timedelta(days=10))
+        #print(date.today(), date.today() - timedelta(days=10))
 
     def get_news(self):
         url = self.finviz_url + self.stock_ticker
@@ -347,19 +349,18 @@ class StockNews(StockTweets):
         # print(mean_scores)
         # print(mean_scores)
         color = ['#d63031', '#55efc4', '#74b9ff']
-        fig = plt.figure(figsize=(12, 10))
+        fig = plt.figure(figsize=(7, 3))
         sns.barplot(data=df2, x=df2.index,
                     y=df2['sentiment_score'], hue=df2['sentiment'], palette=color)
         fig.autofmt_xdate()
         plt.title(label=f"{self.stock_ticker} Daily News Sentiment Scores")
 
-        plt.show()
+        return fig
 
     def plot_daily_sentiment_barchart(self):
         parsed_and_scored_news = self.get_stock_news_sentiments()
         ticker = self.stock_ticker
-        self.plot_daily_sentiment(parsed_and_scored_news, ticker)
-        return parsed_and_scored_news
+        return self.plot_daily_sentiment(parsed_and_scored_news, ticker)
 
     def get_sentiments_with_price(self):
         parsed_and_scored_news = self.get_stock_news_sentiments()
@@ -373,7 +374,8 @@ class StockNews(StockTweets):
 
     def plot_sentiments_with_price(self):
         df = self.get_sentiments_with_price()
-        sns.set(rc={'figure.figsize': (13.0, 8.0)})
+        fig = plt.figure(figsize=(7, 3))
+        #sns.set(rc={'figure.figsize': (2, 3)})
         ax = sns.lineplot(data=df['Close'], color="green",
                           label=f'{self.stock_ticker} Price')
         ax2 = plt.twinx()
@@ -381,11 +383,11 @@ class StockNews(StockTweets):
                      color="red", ax=ax2, label=f'{self.stock_ticker} Sentiment Score from News')
 
         plt.title(
-            label=f"{self.stock_ticker} Price with Daily Stock News Sentiments")
-
-        plt.show()
+            label=f"{self.stock_ticker} Price Affected by Daily Stock News Sentiments")
+        fig.autofmt_xdate()
+        return fig
 
 
 if __name__ == "__main__":
-    StockNews(stock_ticker='GOOGL').plot_daily_sentiment_barchart()
+    StockNews(stock_ticker='GOOGL').plot_tweet_sentiment_donut_chart()
     # StockTweets(stock_ticker='GOOGL').plot_word_cloud()

@@ -41,7 +41,7 @@ class StockDatapipeline:
             style.use("ggplot")
             load_dotenv(find_dotenv())
             self.path = self.get_current_dir()
-            self.settings = self.load_settings()
+            self.settings = self.load_settings(self.path)
             self.logger = self.app_logger(self.settings["app_name"])
             self.stock_ticker = stock_ticker
             self.data = self.get_stock_data_from_ticker(stock_ticker)
@@ -50,10 +50,11 @@ class StockDatapipeline:
         except Exception as e:
             self.logger.error(f"Cannot initialize StockMarketDataPipeline")
 
-    def load_settings(self) -> json:
+    @staticmethod
+    def load_settings(path) -> json:
         try:
             settings = dict()
-            json_path = os.path.join(self.path, "data\data.json")
+            json_path = os.path.join(path, "data\data.json")
             with open(json_path, "r") as file:
                 settings = json.load(file)
                 return settings
@@ -128,7 +129,7 @@ class StockDatapipeline:
         try:
             self.logger.info(f"Plotting Stock Data for {self.stock_ticker}")
             data = self.data
-            fig = plt.figure(figsize=(10, 7))
+            fig = plt.figure(figsize=(6, 3))
             plt.title(
                 f"Price History Of {self.stock_ticker}",
                 fontsize=15,
@@ -236,7 +237,7 @@ class StockDatapipeline:
             self.logger.error(f"Cannot Get Stock Volume: {e}")
 
     def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=100):
-        fig = plt.figure(figsize=(10, 7), dpi=dpi)
+        fig = plt.figure(figsize=(7, 2), dpi=dpi)
         plt.plot(x, y, color='tab:Red')
         plt.gca().set(title=title, xlabel=xlabel, ylabel=ylabel)
         plt.legend([self.stock_ticker])
@@ -267,7 +268,8 @@ class StockDatapipeline:
             df['Close'], model='multiplicative', period=30)
 
         # Plot
-        fig = plt.rcParams.update({'figure.figsize': (10, 7)})
+        fig = plt.figure()
+        plt.rcParams.update({'figure.figsize': (10, 7)})
         multiplicative_decomposition.plot().suptitle(
             'Multiplicative Decomposition', fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
@@ -280,7 +282,8 @@ class StockDatapipeline:
         additive_decomposition = seasonal_decompose(
             df['Close'], model='additive', period=30)
 
-        fig = plt.rcParams.update({'figure.figsize': (10, 7)})
+        fig = plt.figure()
+        plt.rcParams.update({'figure.figsize': (10, 7)})
         additive_decomposition.plot().suptitle('Additive Decomposition', fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
@@ -392,7 +395,7 @@ class StockDatapipeline:
 
         xdate = [x for x in df.Date]
 
-        fig = plt.figure(figsize=(10, 7))
+        fig = plt.figure(figsize=(6, 3))
 
         plt.plot(xdate, df.Close, lw=1, color="black", label="Price")
         plt.plot(xdate, ma_1, lw=3, linestyle="dotted",
