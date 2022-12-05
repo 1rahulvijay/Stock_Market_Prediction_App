@@ -169,6 +169,7 @@ class LongShortTermMemory:
         targets = test_data[self.aim][self.window_len:]
         preds = test_data[self.aim].values[:-self.window_len] * (preds + 1)
         preds = pd.Series(index=targets.index, data=preds)
+        #plt.show()
         return self.line_plot(targets, preds, 'actual', 'prediction',
                               lw=2, stock_ticker=self.stock_ticker)
         # plt.show()
@@ -180,11 +181,11 @@ class XGBoostModel:
         self.valid_size = 0.15
         self.stock_ticker = stock_ticker
         self.data = StockDatapipeline.get_stock_data_from_ticker(stock_ticker)
-        self.gamma = 0.01
+        self.gamma = 0.001
         self.learning_rate = 0.05
-        self.max_depth = 8
+        self.max_depth = 12
         self.n_estimators = 400
-        self.random_state = 40
+        self.random_state = 42
 
     def relative_strength_idx(self, df, n=14):
         close = df['Close']
@@ -282,7 +283,7 @@ class XGBoostModel:
         model = self.build_and_train_model()
         y_pred = self.y_pred(model=model, X_test=X_test)
         # print(y_pred)
-        # print(f'mean_squared_error = {mean_squared_error(y_test, y_pred)}')
+        print(f'mean_squared_error = {mean_squared_error(y_test, y_pred)}')
         return y_pred
 
     def plot_xgboost_prediction(self):
@@ -296,14 +297,14 @@ class XGBoostModel:
         predicted_prices['Close'] = y_pred
 
         fig = plt.figure(figsize=(7, 3))
-        sns.lineplot(x=predicted_prices.Date, y=y_test)
+        sns.lineplot(x=predicted_prices.Date, y=y_test, palette='red')
         sns.lineplot(x=predicted_prices.Date, y=y_pred, palette='green')
         plt.legend(['Predicted', 'Actual'])
         plt.title(f'{self.stock_ticker} XGBoost Model')
-        plt.show()
+        #plt.show()
         return fig
 
 
 if __name__ == "__main__":
-    # LongShortTermMemory(stock_ticker='RNDR-USD').plot_prediction()
-    XGBoostModel(stock_ticker='RNDR-USD').plot_xgboost_prediction()
+    LongShortTermMemory(stock_ticker='LTO-USD').plot_prediction()
+    XGBoostModel(stock_ticker='LTO-USD').plot_xgboost_prediction()
