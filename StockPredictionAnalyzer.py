@@ -170,7 +170,7 @@ class LongShortTermMemory:
         preds = test_data[self.aim].values[:-self.window_len] * (preds + 1)
         preds = pd.Series(index=targets.index, data=preds)
         return self.line_plot(targets, preds, 'actual', 'prediction',
-                       lw=2, stock_ticker=self.stock_ticker)
+                              lw=2, stock_ticker=self.stock_ticker)
         # plt.show()
 
 
@@ -186,13 +186,32 @@ class XGBoostModel:
         self.n_estimators = 400
         self.random_state = 40
 
-    @staticmethod
-    def get_moving_average(df, column):
+    def relative_strength_idx(self, df, n=14):
+        close = df['Close']
+        delta = close.diff()
+        delta = delta[1:]
+        pricesUp = delta.copy()
+        pricesDown = delta.copy()
+        pricesUp[pricesUp < 0] = 0
+        pricesDown[pricesDown > 0] = 0
+        rollUp = pricesUp.rolling(n).mean()
+        rollDown = pricesDown.abs().rolling(n).mean()
+        rs = rollUp / rollDown
+        rsi = 100.0 - (100.0 / (1.0 + rs))
+        return rsi
+
+    def get_moving_average(self, df, column):
+        df['RSI'] = self.relative_strength_idx(df).fillna(0)
         df['EMA_9'] = df['Close'].ewm(9).mean().shift()
         df['SMA_5'] = df['Close'].rolling(5).mean().shift()
         df['SMA_10'] = df['Close'].rolling(10).mean().shift()
         df['SMA_15'] = df['Close'].rolling(15).mean().shift()
         df['SMA_30'] = df['Close'].rolling(30).mean().shift()
+        EMA_12 = pd.Series(df['Close'].ewm(span=12, min_periods=12).mean())
+        EMA_26 = pd.Series(df['Close'].ewm(span=26, min_periods=26).mean())
+        df['MACD'] = pd.Series(EMA_12 - EMA_26)
+        df['MACD_signal'] = pd.Series(
+            df.MACD.ewm(span=9, min_periods=9).mean())
         return df
 
     def get_data(self):
@@ -208,7 +227,7 @@ class XGBoostModel:
         drop_cols = ['Date']
         df = self.get_data()
         df.reset_index(inplace=True)
-        #print(df)
+        # print(df)
 
         test_split_idx = int(round(df.shape[0] * (1-self.test_size)))
         valid_split_idx = int(round(
@@ -277,13 +296,14 @@ class XGBoostModel:
         predicted_prices['Close'] = y_pred
 
         fig = plt.figure(figsize=(7, 3))
-        sns.lineplot(y=y_test, x=predicted_prices.Date, palette=['green'])
-        sns.lineplot(y=y_pred, x=predicted_prices.Date)
+        sns.lineplot(x=predicted_prices.Date, y=y_test)
+        sns.lineplot(x=predicted_prices.Date, y=y_pred, palette='green')
         plt.legend(['Predicted', 'Actual'])
         plt.title(f'{self.stock_ticker} XGBoost Model')
+        plt.show()
         return fig
 
 
 if __name__ == "__main__":
-    LongShortTermMemory(stock_ticker='RNDR-USD').plot_prediction()
+    # LongShortTermMemory(stock_ticker='RNDR-USD').plot_prediction()
     XGBoostModel(stock_ticker='RNDR-USD').plot_xgboost_prediction()
