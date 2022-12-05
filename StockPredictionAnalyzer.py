@@ -30,7 +30,7 @@ class LongShortTermMemory:
         self.window_len = 5
         self.test_size = 0.2
         self.zero_base = True
-        self.lstm_neurons = 50
+        self.lstm_neurons = 256
         self.epochs = 100
         self.batch_size = 32
         self.loss = 'mse'
@@ -57,6 +57,7 @@ class LongShortTermMemory:
         data = data.set_index('Date')
         data.index = pd.to_datetime(data.index, unit='ns')
         data.sort_index(ascending=True, inplace=True)
+        data.dropna(inplace=True)
         return data
 
     def get_dynamic_train_test_data(self):
@@ -154,9 +155,9 @@ class LongShortTermMemory:
             self.data, self.aim, window_len=self.window_len, zero_base=self.zero_base, test_size=self.test_size)
         targets = test_data[self.aim][self.window_len:]
         preds = model.predict(X_test).squeeze()
-        mean_absoulte_err = mean_absolute_error(preds, y_test)
-        r2_sco = r2_score(y_test, preds)
-        r2_sco = r2_sco*100
+        # mean_absoulte_err = mean_absolute_error(preds, y_test)
+        # r2_sco = r2_score(y_test, preds)
+        # r2_sco = r2_sco*100
 
         #print(r2_sco, mean_absoulte_err)
         return preds

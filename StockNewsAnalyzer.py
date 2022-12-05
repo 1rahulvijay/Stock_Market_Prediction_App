@@ -341,6 +341,7 @@ class StockNews(StockTweets):
         df = parsed_and_scored_news
         df2 = df.reset_index()
         df2['datetime'] = df2['datetime'].dt.date
+        #df2['datetime'] = df2['datetime'].sort_values().unique()
         df2.set_index('datetime', inplace=True)
         #df2.sort_index(ascending=True, inplace=True)
         # mean_scores = df.resample('D').mean()
@@ -349,12 +350,12 @@ class StockNews(StockTweets):
         # print(mean_scores)
         # print(mean_scores)
         color = ['#d63031', '#55efc4', '#74b9ff']
-        fig = plt.figure(figsize=(7, 3))
+        fig = plt.figure(figsize=(11, 3))
         sns.barplot(data=df2, x=df2.index,
                     y=df2['sentiment_score'], hue=df2['sentiment'], palette=color)
         fig.autofmt_xdate()
         plt.title(label=f"{self.stock_ticker} Daily News Sentiment Scores")
-
+        #plt.show()
         return fig
 
     def plot_daily_sentiment_barchart(self):
@@ -389,5 +390,5 @@ class StockNews(StockTweets):
 
 
 if __name__ == "__main__":
-    StockNews(stock_ticker='GOOGL').plot_tweet_sentiment_donut_chart()
+    StockNews(stock_ticker='RELI').plot_daily_sentiment_barchart()
     # StockTweets(stock_ticker='GOOGL').plot_word_cloud()

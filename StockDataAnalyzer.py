@@ -101,6 +101,7 @@ class StockDatapipeline:
     @staticmethod
     def get_stock_data_from_ticker(stock_ticker):
         data = yf.download(stock_ticker)
+        data.interpolate(method="linear", limit_direction="backward", inplace=True)
         data.reset_index(inplace=True)
         data.rename(columns={'index': 'Date'}, inplace=True)
         return data

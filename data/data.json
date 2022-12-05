@@ -10,7 +10,6 @@
     "css_file": "style\\style.css",
     "stock_list": [
         "GOOGL",
-        "BABA",
         "NFLX",
         "AAPL",
         "MSFT",
@@ -19,6 +18,11 @@
         "TSLA",
         "NVDA",
         "TSM",
-        "WMT"
+        "WMT",
+        "INFY",
+        "WIT",
+        "RELI",
+        "BABA",
+        "IBM"
     ]
 }
