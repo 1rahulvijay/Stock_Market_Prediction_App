@@ -214,6 +214,7 @@ class XGBoostModel:
         df['MACD'] = pd.Series(EMA_12 - EMA_26)
         df['MACD_signal'] = pd.Series(
             df.MACD.ewm(span=9, min_periods=9).mean())
+        df.interpolate(method="linear", limit_direction="backward", inplace=True)
         return df
 
     def get_data(self):
@@ -307,5 +308,5 @@ class XGBoostModel:
 
 
 if __name__ == "__main__":
-    LongShortTermMemory(stock_ticker='LTO-USD').plot_prediction()
+    #LongShortTermMemory(stock_ticker='LTO-USD').plot_prediction()
     XGBoostModel(stock_ticker='LTO-USD').plot_xgboost_prediction()
