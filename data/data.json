@@ -9,8 +9,11 @@
     "open_address": "td",
     "css_file": "style\\style.css",
     "stock_list": [
-        "GOOGL",
         "NFLX",
+        "HDB",
+        "GS",
+        "CS",
+        "GOOG",
         "AAPL",
         "MSFT",
         "META",
