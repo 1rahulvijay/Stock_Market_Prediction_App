@@ -76,6 +76,7 @@ class LongShortTermMemory:
         ax.set_title(
             f'{stock_ticker} LSTM Model', fontsize=16)
         ax.legend(loc='best', fontsize=16)
+        fig.autofmt_xdate()
         return fig
 
     def plot_train_test_split(self):

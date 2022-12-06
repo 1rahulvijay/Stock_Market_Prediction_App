@@ -100,8 +100,11 @@ class StockDatapipeline:
 
     @staticmethod
     def get_stock_data_from_ticker(stock_ticker):
-        data = yf.download(stock_ticker)
-        data.interpolate(method="linear", limit_direction="backward", inplace=True)
+        start = "2015-01-01"
+        end = datetime.today().strftime('%Y-%m-%d')
+        data = yf.download(stock_ticker, start, end)
+        data.interpolate(
+            method="linear", limit_direction="backward", inplace=True)
         data.reset_index(inplace=True)
         data.rename(columns={'index': 'Date'}, inplace=True)
         return data
@@ -239,7 +242,7 @@ class StockDatapipeline:
             self.logger.error(f"Cannot Get Stock Volume: {e}")
 
     def __plot_trend(self, df, x, y, title=f"", xlabel='Date', ylabel='Stock price', dpi=200):
-        fig = plt.figure(figsize=(7, 2), dpi=dpi)
+        fig = plt.figure(figsize=(10, 2), dpi=dpi)
         plt.plot(x, y, color='tab:Red')
         plt.gca().set(title=title, xlabel=xlabel, ylabel=ylabel)
         plt.legend([self.stock_ticker])
