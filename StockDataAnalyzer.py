@@ -264,6 +264,7 @@ class StockDatapipeline:
         plt.title(f'{self.stock_ticker} (Two Side View)', fontsize=16)
         plt.hlines(y=0, xmin=np.min(df['Date']),
                    xmax=np.max(df['Date']), linewidth=.5)
+        fig.autofmt_xdate()
         return fig
 
     def plot_multiplicative_decompose(self):
