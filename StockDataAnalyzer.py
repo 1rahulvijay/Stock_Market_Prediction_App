@@ -100,7 +100,7 @@ class StockDatapipeline:
 
     @staticmethod
     def get_stock_data_from_ticker(stock_ticker):
-        start = "2015-01-01"
+        start = "2017-01-01"
         end = datetime.today().strftime('%Y-%m-%d')
         data = yf.download(stock_ticker, start, end)
         data.interpolate(
