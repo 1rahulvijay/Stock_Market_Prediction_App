@@ -215,15 +215,10 @@ class StockDatapipeline:
         self.logger.info(f"Getting Current Open Price for {self.stock_ticker}")
         try:
             url = f"{self.settings['yfinance_url']}/{self.stock_ticker}"
-            page = requests.get(url)
-            soup = BeautifulSoup(page.text, "lxml")
-            price = soup.find(
-                self.settings["open_address"], class_=self.settings["open_class"]
-            ).text
-            self.logger.info(
-                f"Retrived Open Price Successfully {self.stock_ticker}: {price}"
-            )
-            return price
+            df = pd.read_html(url)
+            df = df[0]
+            open = df[1].iloc[1]
+            return float(open)
         except Exception as e:
             self.logger.error(f"Cannot Get Open Price for: {e}")
 
@@ -237,7 +232,7 @@ class StockDatapipeline:
             df = pd.read_html(url)
             df = df[0]
             volume = df[1].iloc[6]
-            return volume
+            return float(volume)
         except Exception as e:
             self.logger.error(f"Cannot Get Stock Volume: {e}")
 
