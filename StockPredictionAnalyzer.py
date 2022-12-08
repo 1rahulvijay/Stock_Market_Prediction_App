@@ -81,7 +81,7 @@ class RNN_Model:
         fig, ax = plt.subplots(1, figsize=(7, 3))
         ax.plot(line1, label=label1, linewidth=lw)
         ax.plot(line2, label=label2, linewidth=lw)
-        ax.set_ylabel("Close", fontsize=7)
+        ax.set_ylabel("Close", fontsize=12)
         ax.set_title(
             f'{stock_ticker} {title} Model', fontsize=10)
         ax.legend(loc='best', fontsize=10)
@@ -265,12 +265,11 @@ class XGBoostModel:
 
         fig = plt.figure(figsize=(7, 3))
         sns.lineplot(x=predicted_prices.Date, y=y_test, palette=['red'])
-        sns.lineplot(x=predicted_prices.Date, y=y_pred, palette=['green'])
+        sns.lineplot(x=predicted_prices.Date, y=y_pred, palette=['blue'])
         plt.legend(['Actual', 'Predicted'], loc='best')
         plt.title(f'{self.stock_ticker} XGBoost Model')
-        # plt.show()
         fig.autofmt_xdate()
-        # plt.show()
+
         return fig
 
 
