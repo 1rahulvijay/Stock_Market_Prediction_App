@@ -1,32 +1,137 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from StockDataAnalyzer import StockDatapipeline
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error
+from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Activation, Dense, Dropout, LSTM
-import matplotlib.pyplot as plt
+from tensorflow.python.keras.layers import SimpleRNNCell
+from tensorflow.python.keras.layers import RNN
 import os
-import tensorflow as tf
-import numpy as np
 from tensorflow.keras import layers
-import pandas as pd
 from sklearn.metrics import r2_score
 from matplotlib.pyplot import style
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
-from StockDataAnalyzer import StockDatapipeline
 import xgboost as xgb
+from sklearn.model_selection import train_test_split, GridSearchCV
 import seaborn as sns
 from xgboost import plot_importance, plot_tree
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split, GridSearchCV
-from warnings import simplefilter
-simplefilter(action='ignore', category=FutureWarning)
-simplefilter(action='ignore', category=DeprecationWarning)
 style.use('ggplot')
 
 
-class LongShortTermMemory:
+class RNN_Model:
     def __init__(self, stock_ticker):
         self.stock_ticker = stock_ticker
-        self.data = StockDatapipeline.get_stock_data_from_ticker(stock_ticker)
         self.aim = "Close"
+        self.scaler = MinMaxScaler()
+        self.rnn_neurons = 256
+        self.epochs = 100
+        self.batch_size = 32
+        self.loss = 'mse'
+        self.dropout = 0.24
+        self.optimizer = 'adam'
+        self.data, self.y = self.__get_data()
+        self.row_len = round(len(self.data.index) * 0.90)
+        self.X_train, self.y_train, self.X_test, self.y_test = self.__scaler_transform()
+        self.X_train = np.expand_dims(self.X_train, axis=1)
+        self.X_test = np.expand_dims(self.X_test, axis=1)
+
+    def __get_data(self):
+        data = StockDatapipeline.get_stock_data_from_ticker(self.stock_ticker)
+        data = data[["Date", "Volume", "Open", "Close"]]
+        y = data.loc[:, ['Close', 'Date']]
+        data = data.drop(['Close'], axis='columns')
+        y = y.set_index('Date')
+        y.index = pd.to_datetime(y.index, unit='ns')
+        data = data.set_index('Date')
+        data.index = pd.to_datetime(data.index, unit='ns')
+        # print(y)
+        return data, y
+
+    @staticmethod
+    def get_callback() -> None:
+        callback = tf.keras.callbacks.EarlyStopping(
+            monitor="val_loss", patience=3, mode="min", verbose=1
+        )
+        return callback
+
+    def __get_dynamic_train_test_data(self):
+        X_train = self.data[:self.row_len]
+        X_test = self.data[self.row_len:]
+        y_train = self.y[:self.row_len]
+        y_test = self.y[self.row_len:]
+        #print(X_train, y_train, X_test, y_test)
+        return X_train, y_train, X_test, y_test
+
+    def __scaler_transform(self):
+        X_train, y_train, X_test, y_test = self.__get_dynamic_train_test_data()
+        X_train = self.scaler.fit_transform(X_train)
+        X_test = self.scaler.fit_transform(X_test)
+        y_train = self.scaler.fit_transform(y_train)
+        y_test = self.scaler.fit_transform(y_test)
+        #print(X_train, y_train, X_test, y_test)
+
+        return X_train, y_train, X_test, y_test
+
+    @staticmethod
+    def line_plot(line1, line2, label1=None, label2=None, lw=2, stock_ticker=None, title=None):
+        fig, ax = plt.subplots(1, figsize=(7, 3))
+        ax.plot(line1, label=label1, linewidth=lw)
+        ax.plot(line2, label=label2, linewidth=lw)
+        ax.set_ylabel(stock_ticker, fontsize=14)
+        ax.set_title(
+            f'{stock_ticker} {title} Model', fontsize=16)
+        ax.legend(loc='best', fontsize=16)
+        fig.autofmt_xdate()
+        # plt.show()
+        return fig
+
+    @staticmethod
+    def build_RNN_model(input_data, output_size, neurons, activ_func='tanh',
+                        dropout=0.21, loss='mse', optimizer='adam'):
+        """Recurrent Neural Network Model"""
+        model = Sequential()
+        model.add(RNN(cell=[SimpleRNNCell(256),
+                            SimpleRNNCell(512),
+                            SimpleRNNCell(1024)], input_shape=(1, 2)))
+        model.add(Dropout(dropout))
+        model.add(Dense(units=64*4))
+        model.add(Activation("relu"))
+        model.add(Dropout(dropout))
+        model.add(Dense(units=output_size))
+        model.add(Activation(activ_func))
+
+        model.compile(loss=loss, optimizer=optimizer)
+        return model
+
+    def train_rnn_model(self):
+        np.random.seed(1024)
+        model = self.build_RNN_model(self.X_train, output_size=1, neurons=self.rnn_neurons,
+                                     dropout=self.dropout, loss=self.loss, optimizer=self.optimizer)
+
+        modelfit = model.fit(self.X_train, self.y_train, validation_data=(
+            self.X_test, self.y_test), epochs=self.epochs, batch_size=self.batch_size,
+            verbose=1, shuffle=True, callbacks=self.get_callback())
+
+        return model, modelfit
+
+    def plot_rnn_prediction(self):
+        model, modelfit = self.train_rnn_model()
+        test_data = self.y[self.row_len:]
+        preds = model.predict(self.X_test).squeeze()
+
+        predd = self.scaler.inverse_transform(preds.reshape(len(test_data), 1))
+        predd = pd.Series(index=test_data.index, data=predd.flatten())
+        return self.line_plot(test_data.Close, predd, 'Actual',
+                              'Predicted', stock_ticker=self.stock_ticker, title='RNN')
+
+
+class LSTM_Model(RNN_Model):
+    def __init__(self, stock_ticker):
+        super().__init__(stock_ticker)
         self.window_len = 5
         self.test_size = 0.2
         self.zero_base = True
@@ -36,82 +141,6 @@ class LongShortTermMemory:
         self.loss = 'mse'
         self.dropout = 0.24
         self.optimizer = 'adam'
-
-    @staticmethod
-    def get_defined_metrics() -> None:
-        try:
-            defined_metrics = [tf.keras.metrics.MeanSquaredError(name="MSE")]
-            return defined_metrics
-        except Exception as e:
-            self.logger.error(f"cannot retrieve mean squared metrics: {e}")
-
-    @staticmethod
-    def get_callback() -> None:
-        callback = tf.keras.callbacks.EarlyStopping(
-            monitor="val_loss", patience=3, mode="min", verbose=1
-        )
-        return callback
-
-    def process_data(self):
-        data = self.data
-        data = data.set_index('Date')
-        data.index = pd.to_datetime(data.index, unit='ns')
-        data.sort_index(ascending=True, inplace=True)
-        data.dropna(inplace=True)
-        return data
-
-    def get_dynamic_train_test_data(self):
-        data = self.process_data()
-        row_len = round(len(data.index) * .80)
-        train_data = data.iloc[:row_len]
-        test_data = data.iloc[row_len:]
-        return train_data, test_data
-
-    @staticmethod
-    def line_plot(line1, line2, label1=None, label2=None, lw=2, stock_ticker=None):
-        fig, ax = plt.subplots(1, figsize=(7, 3))
-        ax.plot(line1, label=label1, linewidth=lw)
-        ax.plot(line2, label=label2, linewidth=lw)
-        ax.set_ylabel(stock_ticker, fontsize=14)
-        ax.set_title(
-            f'{stock_ticker} LSTM Model', fontsize=16)
-        ax.legend(loc='best', fontsize=16)
-        fig.autofmt_xdate()
-        return fig
-
-    def plot_train_test_split(self):
-        train_data, test_data = self.get_dynamic_train_test_data()
-        self.line_plot(train_data[self.aim],
-                       test_data[self.aim], 'training', 'test', stock_ticker=self.stock_ticker)
-
-    @staticmethod
-    def normalise_zero_base(continuous):
-        return continuous / continuous.iloc[0] - 1
-
-    @staticmethod
-    def normalise_min_max(continuous):
-        return (continuous - continuous.min()) / (data.max() - continuous.min())
-
-    def extract_window_data(self, continuous, window_len=5, zero_base=True):
-        window_data = []
-        for idx in range(len(continuous) - window_len):
-            tmp = continuous[idx: (idx + window_len)].copy()
-            if zero_base:
-                tmp = self.normalise_zero_base(tmp)
-            window_data.append(tmp.values)
-        return np.array(window_data)
-
-    def prepare_data(self, continuous, aim, window_len=10, zero_base=True, test_size=0.2):
-        train_data, test_data = self.get_dynamic_train_test_data()
-        X_train = self.extract_window_data(train_data, window_len, zero_base)
-        X_test = self.extract_window_data(test_data, window_len, zero_base)
-        y_train = train_data[aim][window_len:].values
-        y_test = test_data[aim][window_len:].values
-        if zero_base:
-            y_train = y_train / train_data[aim][:-window_len].values - 1
-            y_test = y_test / test_data[aim][:-window_len].values - 1
-
-        return train_data, test_data, X_train, X_test, y_train, y_test
 
     @staticmethod
     def build_lstm_model(input_data, output_size, neurons, activ_func='linear',
@@ -126,60 +155,31 @@ class LongShortTermMemory:
         model.compile(loss=loss, optimizer=optimizer)
         return model
 
-    def training_buidling_lstm_model(self):
-        np.random.seed(245)
-        train_data, test_data, X_train, X_test, y_train, y_test = self.prepare_data(
-            self.data, self.aim, window_len=self.window_len, zero_base=self.zero_base, test_size=self.test_size)
-
+    def train_lstm_model(self):
         model = self.build_lstm_model(
-            X_train, output_size=1, neurons=self.lstm_neurons, dropout=self.dropout, loss=self.loss,
+            self.X_train, output_size=1, neurons=self.lstm_neurons, dropout=self.dropout, loss=self.loss,
             optimizer=self.optimizer)
-        modelfit = model.fit(
-            X_train, y_train, validation_data=(X_test, y_test), epochs=self.epochs, batch_size=self.batch_size, verbose=1, shuffle=True, callbacks=self.get_callback())
+        modelfit = model.fit(self.X_train, self.y_train, validation_data=(
+            self.X_test, self.y_test), epochs=self.epochs,
+            batch_size=self.batch_size, verbose=1, shuffle=True, callbacks=super(LSTM_Model, self).get_callback())
 
-        return modelfit, model
+        return model, modelfit
 
-    def plot_validation_training_loss(self):
-        modelfit, model = self.training_buidling_lstm_model()
-        plt.plot(modelfit.history['loss'], 'r',
-                 linewidth=2, label='Training loss')
-        plt.plot(modelfit.history['val_loss'], 'g',
-                 linewidth=2, label='Validation loss')
-        plt.title(f'LSTM Neural Networks - {self.stock_ticker} Model')
-        plt.xlabel('Epochs numbers')
-        plt.ylabel('MSE numbers')
-        plt.show()
+    def plot_lstm_prediction(self):
+        model, modelfit = self.train_lstm_model()
+        test_data = self.y[self.row_len:]
+        preds = model.predict(self.X_test).squeeze()
 
-    def test_predicts(self):
-        modelfit, model = self.training_buidling_lstm_model()
-        train_data, test_data, X_train, X_test, y_train, y_test = self.prepare_data(
-            self.data, self.aim, window_len=self.window_len, zero_base=self.zero_base, test_size=self.test_size)
-        targets = test_data[self.aim][self.window_len:]
-        preds = model.predict(X_test).squeeze()
-        # mean_absoulte_err = mean_absolute_error(preds, y_test)
-        # r2_sco = r2_score(y_test, preds)
-        # r2_sco = r2_sco*100
-
-        #print(r2_sco, mean_absoulte_err)
-        return preds
-
-    def plot_prediction(self):
-        train_data, test_data, X_train, X_test, y_train, y_test = self.prepare_data(
-            self.data, self.aim, window_len=self.window_len, zero_base=self.zero_base, test_size=self.test_size)
-        preds = self.test_predicts()
-        targets = test_data[self.aim][self.window_len:]
-        preds = test_data[self.aim].values[:-self.window_len] * (preds + 1)
-        preds = pd.Series(index=targets.index, data=preds)
-        #plt.show()
-        return self.line_plot(targets, preds, 'actual', 'prediction',
-                              lw=2, stock_ticker=self.stock_ticker)
-        # plt.show()
+        predd = self.scaler.inverse_transform(preds.reshape(len(test_data), 1))
+        predd = pd.Series(index=test_data.index, data=predd.flatten())
+        return super(LSTM_Model, self).line_plot(test_data.Close, predd, 'Actual',
+                                                 'Predicted', stock_ticker=self.stock_ticker, title='LSTM')
 
 
 class XGBoostModel:
     def __init__(self, stock_ticker):
-        self.test_size = 0.15
-        self.valid_size = 0.15
+        self.test_size = 0.05
+        self.valid_size = 0.05
         self.stock_ticker = stock_ticker
         self.data = StockDatapipeline.get_stock_data_from_ticker(stock_ticker)
         self.gamma = 0.001
@@ -188,43 +188,10 @@ class XGBoostModel:
         self.n_estimators = 400
         self.random_state = 42
 
-    def relative_strength_idx(self, df, n=14):
-        close = df['Close']
-        delta = close.diff()
-        delta = delta[1:]
-        pricesUp = delta.copy()
-        pricesDown = delta.copy()
-        pricesUp[pricesUp < 0] = 0
-        pricesDown[pricesDown > 0] = 0
-        rollUp = pricesUp.rolling(n).mean()
-        rollDown = pricesDown.abs().rolling(n).mean()
-        rs = rollUp / rollDown
-        rsi = 100.0 - (100.0 / (1.0 + rs))
-        return rsi
-
-    def get_moving_average(self, df, column):
-        df['RSI'] = self.relative_strength_idx(df).fillna(0)
-        df['EMA_9'] = df['Close'].ewm(9).mean().shift()
-        df['SMA_5'] = df['Close'].rolling(5).mean().shift()
-        df['SMA_10'] = df['Close'].rolling(10).mean().shift()
-        df['SMA_15'] = df['Close'].rolling(15).mean().shift()
-        df['SMA_30'] = df['Close'].rolling(30).mean().shift()
-        EMA_12 = pd.Series(df['Close'].ewm(span=12, min_periods=12).mean())
-        EMA_26 = pd.Series(df['Close'].ewm(span=26, min_periods=26).mean())
-        df['MACD'] = pd.Series(EMA_12 - EMA_26)
-        df['MACD_signal'] = pd.Series(
-            df.MACD.ewm(span=9, min_periods=9).mean())
-        df.interpolate(method="linear", limit_direction="backward", inplace=True)
-        return df
-
     def get_data(self):
         df = self.data
-        df_close = df[['Date', 'Close']].copy()
-        df_close = df_close.set_index('Date')
-        new_df = self.get_moving_average(df_close, 'Close')
-        new_df.dropna(inplace=True)
-        # print(new_df)
-        return new_df
+        df = df[["Date", "Volume", "Open", "Close"]]
+        return df
 
     def split_data(self):
         drop_cols = ['Date']
@@ -276,8 +243,6 @@ class XGBoostModel:
     @staticmethod
     def y_pred(model, X_test):
         y_pred = model.predict(X_test)
-        # print(f'y_true = {np.array(y_test)[:5]}')
-        # print(f'y_pred = {y_pred[:5]}')
         return y_pred
 
     def get_ypredicted_value(self):
@@ -299,15 +264,17 @@ class XGBoostModel:
         predicted_prices['Close'] = y_pred
 
         fig = plt.figure(figsize=(7, 3))
-        sns.lineplot(x=predicted_prices.Date, y=y_test, palette='red')
-        sns.lineplot(x=predicted_prices.Date, y=y_pred, palette='green')
-        plt.legend(['Predicted', 'Actual'])
+        sns.lineplot(x=predicted_prices.Date, y=y_test, palette=['red'])
+        sns.lineplot(x=predicted_prices.Date, y=y_pred, palette=['green'])
+        plt.legend(['Actual', 'Predicted'], loc='best')
         plt.title(f'{self.stock_ticker} XGBoost Model')
-        #plt.show()
+        # plt.show()
         fig.autofmt_xdate()
+        # plt.show()
         return fig
 
 
 if __name__ == "__main__":
-    #LongShortTermMemory(stock_ticker='LTO-USD').plot_prediction()
-    XGBoostModel(stock_ticker='LTO-USD').plot_xgboost_prediction()
+    XGBoostModel(stock_ticker='IBM').plot_xgboost_prediction()
+    # RNN_Model(stock_ticker='NFLX').plot_rnn_prediction()
+    # LSTM_Model(stock_ticker='NFLX').plot_lstm_prediction()

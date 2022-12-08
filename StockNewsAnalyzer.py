@@ -11,6 +11,7 @@ import matplotlib.image as mpimg
 from dotenv import find_dotenv, load_dotenv
 from matplotlib import style
 import tweepy
+from StockDataAnalyzer import StockDatapipeline
 import re
 from textblob import TextBlob
 import nltk
@@ -31,36 +32,19 @@ simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore')
 
-
 class StockTweets:
     def __init__(self, stock_ticker):
         nltk.download("vader_lexicon")
         style.use("ggplot")
         self.stock_ticker = stock_ticker
         load_dotenv(find_dotenv())
-        self.path = self.get_current_dir()
-        self.settings = self.load_settings()
-        self.stock_ticker = stock_ticker
+        self.path = StockDatapipeline.get_current_dir()
+        self.settings = StockDatapipeline.load_settings(self.path)
         self.bearer_token = os.environ["bearer_token"]
         self.api_key = os.environ["api_key"]
         self.api_key_secrets = os.environ["api_key_secret"]
         self.access_token = os.environ["access_token"]
         self.access_token_secrets = os.environ["access_token_secret"]
-
-    def load_settings(self) -> json:
-        try:
-            settings = dict()
-            json_path = os.path.join(self.path, "data\data.json")
-            with open(json_path, "r") as file:
-                settings = json.load(file)
-                return settings
-        except OSError:
-            raise RuntimeError("Cannot Load JSON Data File")
-
-    @staticmethod
-    def get_current_dir():
-        """get current directory"""
-        return os.path.dirname(os.path.realpath(__file__))
 
     @classmethod
     def twitter_auth(cls, access_token, access_token_secret, api_key_secret, api_key):
@@ -123,33 +107,44 @@ class StockTweets:
         # print(tweet_list_df.head())
         return tweet_list_df
 
-    def get_tweets_polarity(self):
-        tweet_list_df = self.get_cleaned_tweets()
-        tweet_list_df[["polarity", "subjectivity"]] = tweet_list_df["cleaned"].apply(
+    @staticmethod
+    def get_polarity(df, column):
+        df[["polarity", "subjectivity"]] = df[column].apply(
             lambda Text: pd.Series(TextBlob(Text).sentiment)
         )
 
+        return df
+
+    def get_tweets_polarity(self):
+        tweet_list_df = self.get_cleaned_tweets()
+        tweet_list_df = self.get_polarity(tweet_list_df, "cleaned")
+
         return tweet_list_df
 
-    def get_tweets_sentiments(self):
-        tweet_list_df = self.get_tweets_polarity()
-        for index, row in tweet_list_df["cleaned"].iteritems():
+    @staticmethod
+    def get_sentiments(df, column):
+        for index, row in df[column].iteritems():
             score = SentimentIntensityAnalyzer().polarity_scores(row)
             neg = score["neg"]
             neu = score["neu"]
             pos = score["pos"]
             comp = score["compound"]
             if comp <= -0.05:
-                tweet_list_df.loc[index, "sentiment"] = "negative"
+                df.loc[index, "sentiment"] = "negative"
             elif comp >= 0.05:
-                tweet_list_df.loc[index, "sentiment"] = "positive"
+                df.loc[index, "sentiment"] = "positive"
             else:
-                tweet_list_df.loc[index, "sentiment"] = "neutral"
-            tweet_list_df.loc[index, "neg"] = neg
-            tweet_list_df.loc[index, "neu"] = neu
-            tweet_list_df.loc[index, "pos"] = pos
-            tweet_list_df.loc[index, "compound"] = comp
+                df.loc[index, "sentiment"] = "neutral"
+            df.loc[index, "neg"] = neg
+            df.loc[index, "neu"] = neu
+            df.loc[index, "pos"] = pos
+            df.loc[index, "compound"] = comp
         # print(tweet_list_df.head())
+        return df
+
+    def get_tweets_sentiments(self):
+        tweet_list_df = self.get_tweets_polarity()
+        tweet_list_df = self.get_sentiments(tweet_list_df, "cleaned")
         return tweet_list_df
 
     def __seperate_df(self):
@@ -188,14 +183,15 @@ class StockTweets:
         plt.title(label=f'{self.stock_ticker} Tweets Sentiments')
         plt.legend(loc="best")
         p.gca().add_artist(my_circle)
+        # plt.show()
         return fig
 
     def __get_image(self):
         image_temp = os.path.join(
-            self.get_current_dir(), self.settings["word_cloud_temp"]
+            self.path, self.settings["word_cloud_temp"]
         )
         image_save = os.path.join(
-            self.get_current_dir(), self.settings["generated_word_cloud"]
+            self.path, self.settings["generated_word_cloud"]
         )
         return image_temp, image_save
 
@@ -214,7 +210,6 @@ class StockTweets:
         wc.to_file(image_save)
         #print("Word Cloud Saved Successfully")
         plt.imshow(mpimg.imread(image_save))
-        
 
     def plot_word_cloud(self):
         tweet_list_df = self.get_tweets_sentiments()
@@ -295,60 +290,33 @@ class StockNews(StockTweets):
         parsed_news_df = self.parse_news(news_table)
         return parsed_news_df
 
-    @staticmethod
-    def score_news(parsed_news_df):
-        parsed_news_df[["polarity", "subjectivity"]] = parsed_news_df["headline"].apply(
-            lambda Text: pd.Series(TextBlob(Text).sentiment)
-        )
-
-        for index, row in parsed_news_df["headline"].iteritems():
-            score = SentimentIntensityAnalyzer().polarity_scores(row)
-            neg = score["neg"]
-            neu = score["neu"]
-            pos = score["pos"]
-            comp = score["compound"]
-            if comp <= -0.05:
-                parsed_news_df.loc[index, "sentiment"] = "negative"
-            elif comp >= 0.05:
-                parsed_news_df.loc[index, "sentiment"] = "positive"
-            else:
-                parsed_news_df.loc[index, "sentiment"] = "neutral"
-            parsed_news_df.loc[index, "neg"] = neg
-            parsed_news_df.loc[index, "neu"] = neu
-            parsed_news_df.loc[index, "pos"] = pos
-            parsed_news_df.loc[index, "compound"] = comp
-        # print(parsed_news_df.head())
-
-        parsed_and_scored_news = parsed_news_df.set_index('datetime')
-        # print(parsed_and_scored_news)
-        parsed_and_scored_news = parsed_and_scored_news.drop(
-            columns=['date', 'time'])
-        parsed_and_scored_news = parsed_and_scored_news.rename(
-            columns={"compound": "sentiment_score"})
-        # print(parsed_and_scored_news)
-
-        return parsed_and_scored_news
-
     def get_stock_news_sentiments(self):
         parsed_news_df = self.get_news_df()
-        parsed_and_scored_news = self.score_news(parsed_news_df)
-        # print(parsed_and_scored_news)
+        parsed_and_scored_news = super(
+            StockNews, self).get_polarity(parsed_news_df, 'headline')
+
+        parsed_and_scored_news = super(StockNews, self).get_sentiments(
+            parsed_and_scored_news, 'headline')
+
+        parsed_and_scored_news = parsed_news_df.set_index('datetime')
+
+        parsed_and_scored_news = parsed_and_scored_news.drop(
+            columns=['date', 'time'])
+
+        parsed_and_scored_news = parsed_and_scored_news.rename(
+            columns={"compound": "sentiment_score"})
+
+        parsed_and_scored_news.sort_index(ascending=False, inplace=True)
         return parsed_and_scored_news
 
-    def plot_daily_sentiment(self, parsed_and_scored_news, ticker):
+    def __plot_daily_sentiment(self, parsed_and_scored_news, ticker):
 
         # Group by date and ticker columns from scored_news and calculate the mean
         df = parsed_and_scored_news
         df2 = df.reset_index()
         df2['datetime'] = df2['datetime'].dt.date
-        #df2['datetime'] = df2['datetime'].sort_values().unique()
         df2.set_index('datetime', inplace=True)
-        #df2.sort_index(ascending=True, inplace=True)
-        # mean_scores = df.resample('D').mean()
-        # print(mean_scores)
-        # mean_scores.join(df2['sentiment'], how='left')
-        # print(mean_scores)
-        # print(mean_scores)
+        df2.sort_index(ascending=True, inplace=True)
         color = ['#d63031', '#55efc4', '#74b9ff']
         fig = plt.figure(figsize=(11, 3))
         sns.barplot(data=df2, x=df2.index,
@@ -361,9 +329,9 @@ class StockNews(StockTweets):
     def plot_daily_sentiment_barchart(self):
         parsed_and_scored_news = self.get_stock_news_sentiments()
         ticker = self.stock_ticker
-        return self.plot_daily_sentiment(parsed_and_scored_news, ticker)
+        return self.__plot_daily_sentiment(parsed_and_scored_news, ticker)
 
-    def get_sentiments_with_price(self):
+    def __get_sentiments_with_price(self):
         parsed_and_scored_news = self.get_stock_news_sentiments()
         index = parsed_and_scored_news.index.date
         start = str(index.max())
@@ -371,10 +339,11 @@ class StockNews(StockTweets):
         df = yf.download(self.stock_ticker, end, start)
         df2 = parsed_and_scored_news.resample('D').mean()
         news_with_price = df2.join(df['Close']).dropna()
+        news_with_price.sort_index(ascending=True, inplace=True)
         return news_with_price
 
     def plot_sentiments_with_price(self):
-        df = self.get_sentiments_with_price()
+        df = self.__get_sentiments_with_price()
         fig = plt.figure(figsize=(7, 3))
         #sns.set(rc={'figure.figsize': (2, 3)})
         ax = sns.lineplot(data=df['Close'], color="green",
@@ -386,9 +355,10 @@ class StockNews(StockTweets):
         plt.title(
             label=f"{self.stock_ticker} Price Affected by Daily Stock News Sentiments")
         fig.autofmt_xdate()
+        #plt.show()
         return fig
 
 
 if __name__ == "__main__":
-    StockNews(stock_ticker='RELI').plot_daily_sentiment_barchart()
-    # StockTweets(stock_ticker='GOOGL').plot_word_cloud()
+    # StockTweets(stock_ticker='MSFT').plot_tweet_sentiment_donut_chart()
+    StockNews(stock_ticker='IBM').plot_word_cloud()

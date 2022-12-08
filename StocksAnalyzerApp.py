@@ -4,8 +4,7 @@ import json
 from streamlit_option_menu import option_menu
 from StockDataAnalyzer import StockDatapipeline
 from StockNewsAnalyzer import StockNews, StockTweets
-from StockPredictionAnalyzer import LongShortTermMemory, XGBoostModel
-#from streamlit_lottie import st_lottie
+from StockPredictionAnalyzer import LSTM_Model, XGBoostModel
 st.set_page_config(layout="wide", initial_sidebar_state='expanded',
                    page_title="Stocks Analyzer", page_icon="chart_with_upwards_trend")
 
@@ -106,13 +105,18 @@ class StockApp:
 
         with st.container():
             st.markdown('### LSTM Predictions')
-            st.pyplot(fig=LongShortTermMemory(
-                stock_ticker=stock).plot_prediction())
+            st.pyplot(fig=LSTM_Model(
+                stock_ticker=stock).plot_lstm_prediction())
 
         with st.container():
             st.markdown('### XGBoost Predictions')
             st.pyplot(fig=XGBoostModel(
                 stock_ticker=stock).plot_xgboost_prediction())
+
+        with st.container():
+            st.markdown('### RNN Predictions')
+            st.pyplot(fig=LSTM_Model(
+                stock_ticker=stock).plot_rnn_prediction())
 
 
 if __name__ == "__main__":

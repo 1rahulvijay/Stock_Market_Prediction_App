@@ -252,7 +252,7 @@ class StockDatapipeline:
         df = self.data
         x = df['Date'].values
         y1 = df['Close'].values
-        fig, ax = plt.subplots(1, 1, figsize=(10, 9.5), dpi=120)
+        fig, ax = plt.subplots(1, 1, figsize=(10.5, 10), dpi=120)
         plt.fill_between(x, y1=y1, y2=-y1, alpha=0.5,
                          linewidth=2, color='seagreen')
         #plt.ylim(-800, 800)
