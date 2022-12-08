@@ -304,6 +304,7 @@ class XGBoostModel:
         plt.legend(['Predicted', 'Actual'])
         plt.title(f'{self.stock_ticker} XGBoost Model')
         #plt.show()
+        fig.autofmt_xdate()
         return fig
 
 
