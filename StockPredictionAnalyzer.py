@@ -9,11 +9,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Activation, Dense, Dropout, LSTM
 from tensorflow.python.keras.layers import SimpleRNNCell
 from tensorflow.python.keras.layers import RNN
-import os
 from tensorflow.keras import layers
 from sklearn.metrics import r2_score
 from matplotlib.pyplot import style
-from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 import xgboost as xgb
 from sklearn.model_selection import train_test_split, GridSearchCV

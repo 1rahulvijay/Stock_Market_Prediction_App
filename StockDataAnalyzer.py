@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import sys
-import string
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd

@@ -1,12 +1,12 @@
 import streamlit as st
-from PIL import Image
-import json
 from streamlit_option_menu import option_menu
 from StockDataAnalyzer import StockDatapipeline
 from StockNewsAnalyzer import StockNews, StockTweets
 from StockPredictionAnalyzer import LSTM_Model, XGBoostModel
-st.set_page_config(layout="wide", initial_sidebar_state='expanded',
-                   page_title="Stocks Analyzer", page_icon="chart_with_upwards_trend")
+st.set_page_config(layout="wide",
+                   initial_sidebar_state='expanded',
+                   page_title="Stocks Analyzer",
+                   page_icon="chart_with_upwards_trend")
 
 
 class StockApp:
@@ -16,7 +16,6 @@ class StockApp:
         self.css = self.settings['css_file']
         self.local_css(self.css)
         self.stock_list = self.settings['stock_list']
-        # self.lottie = self.settings['lottie']
 
     @staticmethod
     def local_css(file_name):
@@ -88,12 +87,12 @@ class StockApp:
                 stock_ticker=stock).plot_two_side_view())
 
         with c2:
-            st.markdown('### Tweets Sentiment Overview')
+            st.markdown('### Stocks Tweets Sentiment Overview')
             st.pyplot(fig=StockNews(
                 stock_ticker=stock).plot_tweet_sentiment_donut_chart())
 
         with st.container():
-            st.markdown('### Daily News Sentiments')
+            st.markdown('### Daily Financial News Sentiments')
             st.pyplot(fig=StockNews(
                 stock_ticker=stock).plot_daily_sentiment_barchart())
             # StockTweets(stock_ticker=stock).plot_tweet_sentiment_donut_chart()

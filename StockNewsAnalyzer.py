@@ -1,8 +1,4 @@
-import csv
-import json
-import logging
 import os
-import sys
 import string
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -32,6 +28,7 @@ simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore')
 
+
 class StockTweets:
     def __init__(self, stock_ticker):
         nltk.download("vader_lexicon")
@@ -40,6 +37,7 @@ class StockTweets:
         load_dotenv(find_dotenv())
         self.path = StockDatapipeline.get_current_dir()
         self.settings = StockDatapipeline.load_settings(self.path)
+        self.logger = StockDatapipeline.app_logger(self.settings["app_name"])
         self.bearer_token = os.environ["bearer_token"]
         self.api_key = os.environ["api_key"]
         self.api_key_secrets = os.environ["api_key_secret"]
@@ -84,28 +82,37 @@ class StockTweets:
         return sentence
 
     def get_tweets_df(self):
-        tweet_list = []
-        query = f"#{self.stock_ticker} -is:retweet lang:en"
-        paginator = tweepy.Paginator(
-            self.__class__.client_auth(
-                self.bearer_token).search_recent_tweets,
-            query=query,
-            max_results=100,
-            limit=5,
-        )
-        for tweet in paginator.flatten():
-            tweet_list.append(tweet)
-        tweet_list_df = pd.DataFrame(tweet_list, columns=["text"])
-        return tweet_list_df
+        try:
+            self.logger.info(f"Retrieving Tweets for {self.stock_ticker}")
+            tweet_list = []
+            query = f"#{self.stock_ticker} -is:retweet lang:en"
+            paginator = tweepy.Paginator(
+                self.__class__.client_auth(
+                    self.bearer_token).search_recent_tweets,
+                query=query,
+                max_results=100,
+                limit=5,
+            )
+            for tweet in paginator.flatten():
+                tweet_list.append(tweet)
+            tweet_list_df = pd.DataFrame(tweet_list, columns=["text"])
+            return tweet_list_df
+        except Exception as e:
+            self.logger.error(f"Cannot find any tweet for {self.stock_ticker}")
 
     def get_cleaned_tweets(self):
-        cleaned_tweets = []
-        tweet_list_df = self.get_tweets_df()
-        tweet_list_df["cleaned"] = tweet_list_df["text"].apply(
-            self.__class__.preprocess_tweet
-        )
-        # print(tweet_list_df.head())
-        return tweet_list_df
+        try:
+            self.logger.info(f"Cleaning tweets for {self.stock_ticker}")
+            cleaned_tweets = []
+            tweet_list_df = self.get_tweets_df()
+            tweet_list_df["cleaned"] = tweet_list_df["text"].apply(
+                self.__class__.preprocess_tweet
+            )
+            # print(tweet_list_df.head())
+            return tweet_list_df
+        except Exception as e:
+            self.logger.error(
+                f"Cannot clean any tweets for {self.stock_ticker}")
 
     @staticmethod
     def get_polarity(df, column):
@@ -323,7 +330,7 @@ class StockNews(StockTweets):
                     y=df2['sentiment_score'], hue=df2['sentiment'], palette=color)
         fig.autofmt_xdate()
         plt.title(label=f"{self.stock_ticker} Daily News Sentiment Scores")
-        #plt.show()
+        # plt.show()
         return fig
 
     def plot_daily_sentiment_barchart(self):
@@ -355,7 +362,7 @@ class StockNews(StockTweets):
         plt.title(
             label=f"{self.stock_ticker} Price Affected by Daily Stock News Sentiments")
         fig.autofmt_xdate()
-        #plt.show()
+        # plt.show()
         return fig
 
 
