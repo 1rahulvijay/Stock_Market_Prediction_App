@@ -8,6 +8,7 @@
     "open_class": "Ta(end) Fw(600) Lh(14px)",
     "open_address": "td",
     "css_file": "style\\style.css",
+    "toml_file":".streamlit\\config.toml",
     "stock_list": [
         "NFLX",
         "HDB",

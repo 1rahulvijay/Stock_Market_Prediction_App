@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from streamlit_option_menu import option_menu
 from StockDataAnalyzer import StockDatapipeline
 from StockNewsAnalyzer import StockNews, StockTweets
@@ -13,7 +14,7 @@ class StockApp:
     def __init__(self):
         self.path = StockDatapipeline.get_current_dir()
         self.settings = StockDatapipeline.load_settings(self.path)
-        self.css = self.settings['css_file']
+        self.css = os.path.join(self.path, self.settings['css_file'])
         self.local_css(self.css)
         self.stock_list = self.settings['stock_list']
 
