@@ -8,6 +8,7 @@ st.set_page_config(layout="wide",
                    initial_sidebar_state='expanded',
                    page_title="Stocks Analyzer",
                    page_icon="chart_with_upwards_trend")
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
 class StockApp:
@@ -24,18 +25,15 @@ class StockApp:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
     def layout(self):
-        # with st.sidebar:
-        #     st_lottie(self.lottie, key='Hello')
-        # st_lottie(self.lottie)
         stock = st.sidebar.selectbox(
             label='Select Stocks', options=self.stock_list)
-    #    with st.container():
-    #        st_lottie(self.lottie, key="hello")
 
         curr_price = StockDatapipeline(
             stock_ticker=stock).get_realtime_stock_price()
+
         curr_open = StockDatapipeline(
             stock_ticker=stock).get_current_stock_open_price()
+
         curr_vol = StockDatapipeline(stock_ticker=stock).get_stock_volume()
 
         b1, b2, b3 = st.columns(3)
@@ -81,27 +79,35 @@ class StockApp:
             st.pyplot(fig=StockDatapipeline(
                 stock_ticker=stock).plot_trend())
 
-        c1, c2 = st.columns((5, 5))
-        with c1:
-            st.markdown('### Two Side View')
-            st.pyplot(fig=StockDatapipeline(
-                stock_ticker=stock).plot_two_side_view())
+        try:
+            c1, c2 = st.columns((5, 5))
+            with c1:
+                st.markdown('### Two Side View')
+                st.pyplot(fig=StockDatapipeline(
+                    stock_ticker=stock).plot_two_side_view())
 
-        with c2:
-            st.markdown('### Stocks Tweets Sentiment Overview')
-            st.pyplot(fig=StockNews(
-                stock_ticker=stock).plot_tweet_sentiment_donut_chart())
+            with c2:
+                st.markdown('### Stocks Tweets Sentiment Overview')
+                st.pyplot(fig=StockNews(
+                    stock_ticker=stock).plot_tweet_sentiment_donut_chart())
+        except Exception as e:
+            st.error(f'{e}')
 
-        with st.container():
-            st.markdown('### Daily Financial News Sentiments')
-            st.pyplot(fig=StockNews(
-                stock_ticker=stock).plot_daily_sentiment_barchart())
-            # StockTweets(stock_ticker=stock).plot_tweet_sentiment_donut_chart()
+        try:
+            with st.container():
+                st.markdown('### Daily Financial News Sentiments')
+                st.pyplot(fig=StockNews(
+                    stock_ticker=stock).plot_daily_sentiment_barchart())
+        except Exception as e:
+            st.write(f'{e}')
 
-        with st.container():
-            st.markdown('### Daily News Affecting Price')
-            st.pyplot(fig=StockNews(
-                stock_ticker=stock).plot_sentiments_with_price())
+        try:
+            with st.container():
+                st.markdown('### Daily News Affecting Price')
+                st.pyplot(fig=StockNews(
+                    stock_ticker=stock).plot_sentiments_with_price())
+        except Exception as e:
+            st.write(f'{e}')
 
         with st.container():
             st.markdown('### LSTM Predictions')
