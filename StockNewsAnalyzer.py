@@ -123,36 +123,45 @@ class StockTweets:
         return df
 
     def get_tweets_polarity(self):
-        tweet_list_df = self.get_cleaned_tweets()
-        tweet_list_df = self.get_polarity(tweet_list_df, "cleaned")
+        try:
+            tweet_list_df = self.get_cleaned_tweets()
+            tweet_list_df = self.get_polarity(tweet_list_df, "cleaned")
 
-        return tweet_list_df
+            return tweet_list_df
+        except Exception as e:
+            self.logger.error(f"{e}")
 
     @staticmethod
     def get_sentiments(df, column):
-        for index, row in df[column].iteritems():
-            score = SentimentIntensityAnalyzer().polarity_scores(row)
-            neg = score["neg"]
-            neu = score["neu"]
-            pos = score["pos"]
-            comp = score["compound"]
-            if comp <= -0.05:
-                df.loc[index, "sentiment"] = "negative"
-            elif comp >= 0.05:
-                df.loc[index, "sentiment"] = "positive"
-            else:
-                df.loc[index, "sentiment"] = "neutral"
-            df.loc[index, "neg"] = neg
-            df.loc[index, "neu"] = neu
-            df.loc[index, "pos"] = pos
-            df.loc[index, "compound"] = comp
-        # print(tweet_list_df.head())
-        return df
+        try:
+            for index, row in df[column].iteritems():
+                score = SentimentIntensityAnalyzer().polarity_scores(row)
+                neg = score["neg"]
+                neu = score["neu"]
+                pos = score["pos"]
+                comp = score["compound"]
+                if comp <= -0.05:
+                    df.loc[index, "sentiment"] = "negative"
+                elif comp >= 0.05:
+                    df.loc[index, "sentiment"] = "positive"
+                else:
+                    df.loc[index, "sentiment"] = "neutral"
+                df.loc[index, "neg"] = neg
+                df.loc[index, "neu"] = neu
+                df.loc[index, "pos"] = pos
+                df.loc[index, "compound"] = comp
+            # print(tweet_list_df.head())
+            return df
+        except OSError:
+            raise RuntimeError("Unable to Load df")
 
     def get_tweets_sentiments(self):
-        tweet_list_df = self.get_tweets_polarity()
-        tweet_list_df = self.get_sentiments(tweet_list_df, "cleaned")
-        return tweet_list_df
+        try:
+            tweet_list_df = self.get_tweets_polarity()
+            tweet_list_df = self.get_sentiments(tweet_list_df, "cleaned")
+            return tweet_list_df
+        except Exception as e:
+            self.logger.error(f"{e}")
 
     def __seperate_df(self):
         tweet_list_df = self.get_tweets_sentiments()
@@ -171,27 +180,33 @@ class StockTweets:
         return pd.concat([total, percentage], axis=1, keys=["Total", "Percentage"])
 
     def get_tweets_sentiments_percentage(self):
-        tweet_list_df = self.get_tweets_sentiments()
-        data = self.__class__.__count_values_in_column(
-            data=tweet_list_df, feature="sentiment"
-        )
-        # print(data.head())
-        return data
+        try:
+            tweet_list_df = self.get_tweets_sentiments()
+            data = self.__class__.__count_values_in_column(
+                data=tweet_list_df, feature="sentiment"
+            )
+            # print(data.head())
+            return data
+        except Exception as e:
+            self.logger.error(f"{e}")
 
     def plot_tweet_sentiment_donut_chart(self):
-        pichart = self.get_tweets_sentiments_percentage()
-        names = pichart.index
-        size = pichart['Percentage']
-        fig = plt.figure(figsize=(10, 7))
-        my_circle = plt.Circle((0, 0), 0.7, color="white")
-        plt.pie(size, autopct='%1.0f%%', textprops={'fontsize': 16}, labels=names,
-                colors=['#fab1a0', '#74b9ff', '#ff7675'])
-        p = plt.gcf()
-        plt.title(label=f'{self.stock_ticker} Tweets Sentiments')
-        plt.legend(loc="best")
-        p.gca().add_artist(my_circle)
-        # plt.show()
-        return fig
+        try:
+            pichart = self.get_tweets_sentiments_percentage()
+            names = pichart.index
+            size = pichart['Percentage']
+            fig = plt.figure(figsize=(10, 7))
+            my_circle = plt.Circle((0, 0), 0.7, color="white")
+            plt.pie(size, autopct='%1.0f%%', textprops={'fontsize': 16}, labels=names,
+                    colors=['#fab1a0', '#74b9ff', '#ff7675'])
+            p = plt.gcf()
+            plt.title(label=f'{self.stock_ticker} Tweets Sentiments')
+            plt.legend(loc="best")
+            p.gca().add_artist(my_circle)
+            # plt.show()
+            return fig
+        except Exception as e:
+            self.logger.error(f"{e}")
 
     def __get_image(self):
         image_temp = os.path.join(
@@ -251,15 +266,20 @@ class StockNews(StockTweets):
         #print(date.today(), date.today() - timedelta(days=10))
 
     def get_news(self):
-        url = self.finviz_url + self.stock_ticker
-        req = Request(url=url, headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
-        response = urlopen(req)
-        # Read the contents of the file into 'html'
-        html = BeautifulSoup(response, "lxml")
-        # Find 'news-table' in the Soup and load it into 'news_table'
-        news_table = html.find(id='news-table')
-        return news_table
+        try:
+            self.logger.info(
+                f"Retriving Financial News for {self.stock_ticker}")
+            url = self.finviz_url + self.stock_ticker
+            req = Request(url=url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'})
+            response = urlopen(req)
+            # Read the contents of the file into 'html'
+            html = BeautifulSoup(response, "lxml")
+            # Find 'news-table' in the Soup and load it into 'news_table'
+            news_table = html.find(id='news-table')
+            return news_table
+        except Exception as e:
+            self.logger.error(f"Didn't find news: {e} for {self.stock_ticker}")
 
     @staticmethod
     def parse_news(news_table):
@@ -293,9 +313,13 @@ class StockNews(StockTweets):
         return parsed_news_df
 
     def get_news_df(self):
-        news_table = self.get_news()
-        parsed_news_df = self.parse_news(news_table)
-        return parsed_news_df
+        self.logger.info(f"parsing news for {self.stock_ticker}")
+        try:
+            news_table = self.get_news()
+            parsed_news_df = self.parse_news(news_table)
+            return parsed_news_df
+        except Exception as e:
+            self.logger.error(f"Didn't find any news for {self.stock_ticker}")
 
     def get_stock_news_sentiments(self):
         parsed_news_df = self.get_news_df()
@@ -334,9 +358,14 @@ class StockNews(StockTweets):
         return fig
 
     def plot_daily_sentiment_barchart(self):
-        parsed_and_scored_news = self.get_stock_news_sentiments()
-        ticker = self.stock_ticker
-        return self.__plot_daily_sentiment(parsed_and_scored_news, ticker)
+        try:
+            self.logger.info(
+                f"Plotting Daily Sentiment Bar Chart for {self.stock_ticker}")
+            parsed_and_scored_news = self.get_stock_news_sentiments()
+            ticker = self.stock_ticker
+            return self.__plot_daily_sentiment(parsed_and_scored_news, ticker)
+        except Exception as e:
+            self.logger.error(f"Couldn't plot any chart {e}")
 
     def __get_sentiments_with_price(self):
         parsed_and_scored_news = self.get_stock_news_sentiments()
@@ -350,20 +379,26 @@ class StockNews(StockTweets):
         return news_with_price
 
     def plot_sentiments_with_price(self):
-        df = self.__get_sentiments_with_price()
-        fig = plt.figure(figsize=(7, 3))
-        #sns.set(rc={'figure.figsize': (2, 3)})
-        ax = sns.lineplot(data=df['Close'], color="green",
-                          label=f'{self.stock_ticker} Price')
-        ax2 = plt.twinx()
-        sns.lineplot(data=df["sentiment_score"],
-                     color="red", ax=ax2, label=f'{self.stock_ticker} Sentiment Score from News')
+        try:
+            self.logger.info(
+                f"Plotting Sentiments with price chart for {self.stock_ticker}")
+            df = self.__get_sentiments_with_price()
+            fig = plt.figure(figsize=(7, 3))
+            #sns.set(rc={'figure.figsize': (2, 3)})
+            ax = sns.lineplot(data=df['Close'], color="green",
+                              label=f'{self.stock_ticker} Price')
+            ax2 = plt.twinx()
+            sns.lineplot(data=df["sentiment_score"],
+                         color="red", ax=ax2, label=f'{self.stock_ticker} Sentiment Score from News')
 
-        plt.title(
-            label=f"{self.stock_ticker} Price Affected by Daily Stock News Sentiments")
-        fig.autofmt_xdate()
-        # plt.show()
-        return fig
+            plt.title(
+                label=f"{self.stock_ticker} Price Affected by Daily Stock News Sentiments")
+            fig.autofmt_xdate()
+            # plt.show()
+            return fig
+        except Exception as e:
+            self.logger.error(
+                f"Couldn't plot Sentiments with price for {self.stock_ticker}")
 
 
 if __name__ == "__main__":
