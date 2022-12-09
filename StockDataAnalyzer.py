@@ -240,6 +240,7 @@ class StockDatapipeline:
         plt.plot(x, y, color='tab:Red')
         plt.gca().set(title=title, xlabel=xlabel, ylabel=ylabel)
         plt.legend([self.stock_ticker])
+        plt.ion()
         return fig
 
     def plot_trend(self):

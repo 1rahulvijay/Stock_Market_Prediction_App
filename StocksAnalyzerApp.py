@@ -3,7 +3,7 @@ import os
 from streamlit_option_menu import option_menu
 from StockDataAnalyzer import StockDatapipeline
 from StockNewsAnalyzer import StockNews, StockTweets
-from StockPredictionAnalyzer import LSTM_Model, XGBoostModel
+from StockPredictionAnalyzer import LSTM_Model, XGBoostModel, RNN_Model
 st.set_page_config(layout="wide",
                    initial_sidebar_state='expanded',
                    page_title="Stocks Analyzer",
@@ -115,8 +115,7 @@ class StockApp:
 
         with st.container():
             st.markdown('### RNN Predictions')
-            st.pyplot(fig=LSTM_Model(
-                stock_ticker=stock).plot_rnn_prediction())
+            st.pyplot(fig=RNN_Model(stock_ticker=stock).plot_rnn_prediction())
 
 
 if __name__ == "__main__":
