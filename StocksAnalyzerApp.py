@@ -79,35 +79,30 @@ class StockApp:
             st.pyplot(fig=StockDatapipeline(
                 stock_ticker=stock).plot_trend())
 
-        try:
-            c1, c2 = st.columns((5, 5))
-            with c1:
-                st.markdown('### Two Side View')
-                st.pyplot(fig=StockDatapipeline(
-                    stock_ticker=stock).plot_two_side_view())
+        c1, c2 = st.columns((5, 5))
+        with c1:
+            st.markdown('### Two Side View')
+            st.pyplot(fig=StockDatapipeline(
+                stock_ticker=stock).plot_two_side_view())
 
-            with c2:
-                st.markdown('### Stocks Tweets Sentiment Overview')
-                st.pyplot(fig=StockNews(
-                    stock_ticker=stock).plot_tweet_sentiment_donut_chart())
-        except Exception as e:
-            st.error(f'{e}')
+        with c2:
+            st.markdown('### Stocks Tweets Sentiment Overview')
+            st.pyplot(fig=StockNews(
+                stock_ticker=stock).plot_tweet_sentiment_donut_chart())
 
-        try:
-            with st.container():
-                st.markdown('### Daily Financial News Sentiments')
-                st.pyplot(fig=StockNews(
-                    stock_ticker=stock).plot_daily_sentiment_barchart())
-        except Exception as e:
-            st.write(f'{e}')
+        if st.container():
+            st.markdown('### Daily Financial News Sentiments')
+            st.pyplot(fig=StockNews(
+                stock_ticker=stock).plot_daily_sentiment_barchart())
+        else:
+            st.error(f'cannot plot chart')
 
-        try:
-            with st.container():
-                st.markdown('### Daily News Affecting Price')
-                st.pyplot(fig=StockNews(
-                    stock_ticker=stock).plot_sentiments_with_price())
-        except Exception as e:
-            st.write(f'{e}')
+        if st.container():
+            st.markdown('### Daily News Affecting Price')
+            st.pyplot(fig=StockNews(
+                stock_ticker=stock).plot_sentiments_with_price())
+        else:
+            st.error(f'cannot plot chart')
 
         with st.container():
             st.markdown('### LSTM Predictions')
