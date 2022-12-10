@@ -38,7 +38,6 @@ class StockDatapipeline:
     def __init__(self, stock_ticker: str):
         """StockMarketDatapipeline Constructor"""
         try:
-            style.use("ggplot")
             load_dotenv(find_dotenv())
             self.path = self.get_current_dir()
             self.settings = self.load_settings(self.path)

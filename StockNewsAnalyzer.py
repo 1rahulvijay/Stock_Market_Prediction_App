@@ -24,6 +24,8 @@ import yfinance as yf
 from datetime import date, timedelta, datetime
 import warnings
 from warnings import simplefilter
+nltk.download("vader_lexicon")
+style.use("ggplot")
 simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore')
@@ -31,8 +33,6 @@ warnings.filterwarnings('ignore')
 
 class StockTweets:
     def __init__(self, stock_ticker):
-        nltk.download("vader_lexicon")
-        style.use("ggplot")
         self.stock_ticker = stock_ticker
         load_dotenv(find_dotenv())
         self.path = StockDatapipeline.get_current_dir()
