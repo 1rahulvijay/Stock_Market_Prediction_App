@@ -32,7 +32,7 @@ class RNN_Model:
         self.dropout = 0.24
         self.optimizer = 'adam'
         self.data, self.y = self.__get_data()
-        self.row_len = round(len(self.data.index) * 0.90)
+        self.row_len = round(len(self.data.index) * 0.95)
         self.X_train, self.y_train, self.X_test, self.y_test = self.__scaler_transform()
         self.X_train = np.expand_dims(self.X_train, axis=1)
         self.X_test = np.expand_dims(self.X_test, axis=1)
