@@ -23,12 +23,19 @@ import seaborn as sns
 import yfinance as yf
 from datetime import date, timedelta, datetime
 import warnings
+import matplotlib as mpl
 from warnings import simplefilter
 nltk.download("vader_lexicon")
-style.use("ggplot")
+style.use('dark_background')
 simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore')
+COLOR = 'White'
+mpl.rcParams['text.color'] = COLOR
+mpl.rcParams['axes.labelcolor'] = COLOR
+mpl.rcParams['xtick.color'] = COLOR
+mpl.rcParams['ytick.color'] = COLOR
+
 
 
 class StockTweets:
@@ -196,7 +203,7 @@ class StockTweets:
             names = pichart.index
             size = pichart['Percentage']
             fig = plt.figure(figsize=(10, 7))
-            my_circle = plt.Circle((0, 0), 0.7, color="white")
+            my_circle = plt.Circle((0, 0), 0.7, color="black")
             plt.pie(size, autopct='%1.0f%%', textprops={'fontsize': 16}, labels=names,
                     colors=['#fab1a0', '#74b9ff', '#ff7675'])
             p = plt.gcf()
@@ -385,7 +392,7 @@ class StockNews(StockTweets):
             df = self.__get_sentiments_with_price()
             fig = plt.figure(figsize=(7, 3))
             #sns.set(rc={'figure.figsize': (2, 3)})
-            ax = sns.lineplot(data=df['Close'], color="green",
+            ax = sns.lineplot(data=df['Close'], color="#74b9ff",
                               label=f'{self.stock_ticker} Price')
             ax2 = plt.twinx()
             sns.lineplot(data=df["sentiment_score"],

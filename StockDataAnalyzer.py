@@ -23,13 +23,19 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from matplotlib.pyplot import style
 from warnings import simplefilter
 import warnings
+import matplotlib as mpl
 from pandas.plotting import lag_plot
 plt.rcParams.update({'ytick.left': False, 'axes.titlepad': 10})
 # plt.rcParams.update({'font.size': 4})
 simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
-style.use('ggplot')
+style.use('dark_background')
 warnings.filterwarnings('ignore')
+COLOR = 'White'
+mpl.rcParams['text.color'] = COLOR
+mpl.rcParams['axes.labelcolor'] = COLOR
+mpl.rcParams['xtick.color'] = COLOR
+mpl.rcParams['ytick.color'] = COLOR
 
 
 class StockDatapipeline:
@@ -253,7 +259,7 @@ class StockDatapipeline:
         y1 = df['Close'].values
         fig, ax = plt.subplots(1, 1, figsize=(10.5, 10), dpi=120)
         plt.fill_between(x, y1=y1, y2=-y1, alpha=0.5,
-                         linewidth=2, color='seagreen')
+                         linewidth=2, color='#FF4B4B')
         #plt.ylim(-800, 800)
         plt.title(f'{self.stock_ticker} (Two Side View)', fontsize=16)
         plt.hlines(y=0, xmin=np.min(df['Date']),
