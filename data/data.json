@@ -11,6 +11,7 @@
     "toml_file":".streamlit\\config.toml",
     "stock_list": [
         "ABNB",
+        "NET",
         "JNJ",
         "NFLX",
         "HDB",
