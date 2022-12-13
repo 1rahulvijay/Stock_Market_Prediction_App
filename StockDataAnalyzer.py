@@ -104,7 +104,7 @@ class StockDatapipeline:
 
     @staticmethod
     def get_stock_data_from_ticker(stock_ticker):
-        start = "2017-01-01"
+        start = "2019-01-01"
         end = datetime.today().strftime('%Y-%m-%d')
         data = yf.download(stock_ticker, start, end)
         data.interpolate(
@@ -213,8 +213,7 @@ class StockDatapipeline:
             self.logger.error(f"Cannot Download stock ticker data: {e}")
 
     def get_current_stock_open_price(self) -> BeautifulSoup:
-        """sending get request and retrieving html table using requests and beautiful soup,
-        finding price class using beautiful soup and passing html address for open price
+        """Reading Open Price using Read HTML
         """
         self.logger.info(f"Getting Current Open Price for {self.stock_ticker}")
         try:
@@ -227,8 +226,7 @@ class StockDatapipeline:
             self.logger.error(f"Cannot Get Open Price for: {e}")
 
     def get_stock_volume(self) -> BeautifulSoup:
-        """sending get request and retrieving html table using requests and beautiful soup,
-        finding price class using beautiful soup and passing html address for open price
+        """Reading Volume from Read HTML
         """
         self.logger.info(f"Getting Stock Volume for {self.stock_ticker}")
         try:
@@ -375,7 +373,7 @@ class StockDatapipeline:
         plt.xlabel('Date')
         plt.grid(linestyle=':')
         plt.fill_between(df.index, 0, df[f'{sma}'], color='tab:Red', alpha=0.1)
-        plt.legend(loc='upper left')
+        plt.legend(loc='lower left')
         plt.title(f'{stock_ticker} {days} Days Simple Moving Average')
         # plt.show()
         return fig
