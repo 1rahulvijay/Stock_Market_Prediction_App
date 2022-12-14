@@ -25,7 +25,6 @@ from datetime import date, timedelta, datetime
 import warnings
 import matplotlib as mpl
 from warnings import simplefilter
-nltk.download("vader_lexicon")
 style.use('dark_background')
 simplefilter(action='ignore', category=FutureWarning)
 simplefilter(action='ignore', category=DeprecationWarning)
@@ -40,6 +39,7 @@ mpl.rcParams['ytick.color'] = COLOR
 
 class StockTweets:
     def __init__(self, stock_ticker):
+        nltk.download("vader_lexicon")
         self.stock_ticker = stock_ticker
         load_dotenv(find_dotenv())
         self.path = StockDatapipeline.get_current_dir()
