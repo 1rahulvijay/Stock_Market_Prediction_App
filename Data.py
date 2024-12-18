@@ -15,10 +15,8 @@ def search_columns(impala_host, impala_port, search_string):
     # Loop through each database and search for columns
     for database in databases:
         db_name = database[0]
-        cursor.execute(f"USE {db_name}")
-
         # Get all tables in the current database
-        cursor.execute(f"SHOW TABLES")
+        cursor.execute(f"SHOW TABLES IN {db_name}")
         tables = cursor.fetchall()
 
         for table in tables:
