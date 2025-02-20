@@ -2,213 +2,175 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# Set the page configuration to wide mode
+# Set wide layout and page title
 st.set_page_config(page_title="ICM Underwriting Dashboard", layout="wide")
 
-# CUSTOM CSS – adjust these values for finer tuning if needed
+# CUSTOM CSS – using CSS Grid for main content and fine-tuning fonts, colors, and spacing
 st.markdown("""
 <style>
-/* ---------- SIDEBAR ---------- */
+/* ---------- Overall Body ---------- */
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f7fa;
+    color: #333;
+}
+
+/* ---------- Sidebar ---------- */
 [data-testid="stSidebar"] {
     background-color: #1E3A8A;
     padding: 20px;
 }
-.sidebar-title {
-    text-align: center;
+[data-testid="stSidebar"] h2 {
     color: #fff;
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 20px;
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 30px;
 }
 .sidebar-item {
     text-align: center;
     color: #fff;
     font-size: 20px;
-    padding: 10px;
+    padding: 10px 0;
     margin: 8px 0;
     border-bottom: 1px solid rgba(255,255,255,0.3);
 }
 
-/* ---------- HEADER ---------- */
-.header {
+/* ---------- Main Content ---------- */
+.app-header {
     text-align: center;
-    font-size: 42px;
-    font-weight: 700;
-    margin: 20px 0;
-    color: #333;
+    font-size: 40px;
+    font-weight: bold;
+    margin: 30px 0 40px;
 }
-
-/* ---------- SECTION TITLES ---------- */
 .section-title {
-    font-size: 34px;
+    font-size: 32px;
     font-weight: 600;
     margin: 40px 0 20px;
-    color: #333;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 5px;
 }
 
-/* ---------- METRIC CARDS ---------- */
-.metric-card {
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+/* Grid container for metrics & portfolio */
+.metrics-grid, .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
 }
-.metric-card .title {
+
+/* ---------- Metric Cards ---------- */
+.metric-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.metric-title {
     font-size: 16px;
     color: #777;
     margin-bottom: 8px;
 }
-.metric-card .value {
-    font-size: 36px;
-    font-weight: 700;
-    color: #333;
+.metric-value {
+    font-size: 28px;
+    font-weight: bold;
 }
 
-/* ---------- PORTFOLIO CARDS ---------- */
+/* ---------- Portfolio Cards ---------- */
 .portfolio-card {
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 20px;
-    margin-bottom: 20px;
     text-align: center;
     color: #fff;
 }
-.portfolio-card.one { background-color: #0D1321; }
-.portfolio-card.two { background-color: #165A72; }
-.portfolio-card.three { background-color: #4A69BD; }
-.portfolio-card .value {
-    font-size: 36px;
-    font-weight: 700;
+.portfolio-1 { background: #0D1321; }
+.portfolio-2 { background: #165A72; }
+.portfolio-3 { background: #4A69BD; }
+.portfolio-value {
+    font-size: 28px;
+    font-weight: bold;
 }
-.portfolio-card .label {
+.portfolio-label {
     font-size: 16px;
 }
 
-/* ---------- FOOTER BUTTONS ---------- */
+/* ---------- Footer Buttons ---------- */
 .footer {
     text-align: center;
-    margin-top: 40px;
-    margin-bottom: 20px;
+    margin: 40px 0 20px;
 }
 .footer button {
-    background-color: #1E88E5;
+    background: #1E88E5;
     border: none;
     color: #fff;
-    padding: 15px 30px;
-    font-size: 18px;
-    border-radius: 8px;
-    cursor: pointer;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 6px;
     margin: 0 10px;
-    transition: background-color 0.3s;
+    cursor: pointer;
+    transition: background 0.3s;
 }
 .footer button:hover {
-    background-color: #1669A2;
+    background: #1669A2;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------- SIDEBAR ----------
 with st.sidebar:
-    st.markdown('<div class="sidebar-title">ICM Underwriting</div>', unsafe_allow_html=True)
+    st.markdown("<h2>ICM Underwriting</h2>", unsafe_allow_html=True)
     for item in ["ICM", "UW", "TM", "CRMS", "Product", "SELF SERVICE"]:
-        st.markdown(f'<div class="sidebar-item">{item}</div>', unsafe_allow_html=True)
+        st.markdown(f"<div class='sidebar-item'>{item}</div>", unsafe_allow_html=True)
 
 # ---------- MAIN HEADER ----------
-st.markdown('<div class="header">ICM Underwriting Dashboard</div>', unsafe_allow_html=True)
+st.markdown("<div class='app-header'>ICM Underwriting Dashboard</div>", unsafe_allow_html=True)
 
 # ---------- MONITORING STATS SECTION ----------
-st.markdown('<div class="section-title">Monitoring Stats</div>', unsafe_allow_html=True)
-m_col1, m_col2, m_col3 = st.columns(3)
+st.markdown("<div class='section-title'>Monitoring Stats</div>", unsafe_allow_html=True)
 
-with m_col1:
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Total Workflows (Current Month)</div>
-        <div class="value">300</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Annual Reviews</div>
-        <div class="value">275</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Quarterly</div>
-        <div class="value">25</div>
-    </div>
-    """, unsafe_allow_html=True)
+# Create metric cards in a grid – nine cards (three rows of three)
+metrics = [
+    ("Total Workflows (Current Month)", "300"),
+    ("Annual Reviews", "275"),
+    ("Quarterly", "25"),
+    ("Total Workflows (YTD)", "1200 <span style='font-size:16px;'>🔼100</span>"),
+    ("Annual Reviews (YTD)", "900 <span style='font-size:16px;'>🔼100</span>"),
+    ("Quarterly (YTD)", "75 <span style='font-size:16px;'>🔼15</span>"),
+    ("Total Workflows (Last Year)", "1100"),
+    ("Annual Reviews (Last Year)", "800"),
+    ("Quarterly (Last Year)", "60"),
+]
 
-with m_col2:
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Total Workflows (YTD)</div>
-        <div class="value">1200 <span style="font-size:20px;">🔼100</span></div>
+metrics_html = "<div class='metrics-grid'>"
+for title, value in metrics:
+    metrics_html += f"""
+    <div class='metric-card'>
+      <div class='metric-title'>{title}</div>
+      <div class='metric-value'>{value}</div>
     </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Annual Reviews (YTD)</div>
-        <div class="value">900 <span style="font-size:20px;">🔼100</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Quarterly (YTD)</div>
-        <div class="value">75 <span style="font-size:20px;">🔼15</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with m_col3:
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Total Workflows (Last Year)</div>
-        <div class="value">1100</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Annual Reviews (Last Year)</div>
-        <div class="value">800</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="metric-card">
-        <div class="title">Quarterly (Last Year)</div>
-        <div class="value">60</div>
-    </div>
-    """, unsafe_allow_html=True)
+    """
+metrics_html += "</div>"
+st.markdown(metrics_html, unsafe_allow_html=True)
 
 # ---------- PORTFOLIO SECTION ----------
-st.markdown('<div class="section-title">Portfolio</div>', unsafe_allow_html=True)
-p1, p2, p3 = st.columns(3)
-
-with p1:
-    st.markdown("""
-    <div class="portfolio-card one">
-        <div class="value">6,280</div>
-        <div class="label"># of Relationships <span style="font-size:18px;">🔼4%</span></div>
+st.markdown("<div class='section-title'>Portfolio</div>", unsafe_allow_html=True)
+portfolio = [
+    ("6,280", "# of Relationships <span style='font-size:16px;'>🔼4%</span>", "portfolio-1"),
+    ("$1.6T", "OSUC <span style='font-size:16px;'>🔼2%</span>", "portfolio-2"),
+    ("RR 4-", "Risk Profile <span style='font-size:16px;'>🔼1 Notch</span>", "portfolio-3"),
+]
+portfolio_html = "<div class='portfolio-grid'>"
+for value, label, cls in portfolio:
+    portfolio_html += f"""
+    <div class='portfolio-card {cls}'>
+      <div class='portfolio-value'>{value}</div>
+      <div class='portfolio-label'>{label}</div>
     </div>
-    """, unsafe_allow_html=True)
-with p2:
-    st.markdown("""
-    <div class="portfolio-card two">
-        <div class="value">$1.6T</div>
-        <div class="label">OSUC <span style="font-size:18px;">🔼2%</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-with p3:
-    st.markdown("""
-    <div class="portfolio-card three">
-        <div class="value">RR 4-</div>
-        <div class="label">Risk Profile <span style="font-size:18px;">🔼1 Notch</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    """
+portfolio_html += "</div>"
+st.markdown(portfolio_html, unsafe_allow_html=True)
 
 # ---------- ACTIVE WORKFLOW MANAGEMENT CHART ----------
-st.markdown('<div class="section-title">Active Workflow Management: Annual Reviews</div>', unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Active Workflow Management: Annual Reviews</div>", unsafe_allow_html=True)
 months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
 values = [500, 500, 500, 400, 600, 700, 800, 700, 600, 700, 600, 700]
 fig = go.Figure(go.Bar(x=months, y=values, marker_color="#1E88E5"))
@@ -222,7 +184,7 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------- STATUS OVERVIEW TABLE ----------
-st.markdown('<div class="section-title">Status Overview</div>', unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Status Overview</div>", unsafe_allow_html=True)
 status_data = {
     "Category": ["Quarterly", "CCM", "Risk Ratings", "Covenants"],
     "Pending": [15, 20, 30, 18],
@@ -233,9 +195,9 @@ st.table(df_status)
 
 # ---------- FOOTER BUTTONS ----------
 st.markdown("""
-<div class="footer">
-    <button>Monitoring</button>
-    <button>Workflow Management</button>
-    <button>Portfolio</button>
+<div class='footer'>
+  <button>Monitoring</button>
+  <button>Workflow Management</button>
+  <button>Portfolio</button>
 </div>
 """, unsafe_allow_html=True)
